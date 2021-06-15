@@ -24,7 +24,7 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave
             _soundTouch = new SoundTouch.SoundTouch();
             // explore what the default values are before we change them:
 
-            var logger = Configuration.GetLogger<VariableSpeedSampleProvider>();
+            var logger = Configuration.Instance.GetLogger<VariableSpeedSampleProvider>();
             logger.LogDebug("SoundTouch Version {0}", _soundTouch.VersionString);
             logger.LogDebug("Use QuickSeek: {0}", _soundTouch.GetUseQuickSeek());
             logger.LogDebug("Use AntiAliasing: {0}", _soundTouch.GetUseAntiAliasing());

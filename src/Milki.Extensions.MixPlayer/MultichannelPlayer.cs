@@ -65,7 +65,7 @@ namespace Milki.Extensions.MixPlayer
         private SortedSet<Subchannel> _runningChannels = new SortedSet<Subchannel>(new ChannelEndTimeComparer());
         private PlayStatus _playStatus;
 
-        private static readonly ILogger? Logger = Configuration.GetCurrentClassLogger();
+        private static readonly ILogger? Logger = Configuration.Instance.GetCurrentClassLogger();
         private DateTime _lastPositionUpdateTime;
         public TimeSpan AutoRefreshInterval { get; protected set; } = TimeSpan.FromMilliseconds(500);
 

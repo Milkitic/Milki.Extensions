@@ -20,7 +20,7 @@ namespace Milki.Extensions.MixPlayer
 
         public float Volume { get; private set; }
         public float Balance { get; private set; }
-        public HitsoundType HitsoundType { get; private set; }
+        public PlaybackType PlaybackType { get; private set; }
         public int? LoopChannel { get; private set; }
         public SlideControlType ControlType { get; private set; } = SlideControlType.None;
 
@@ -73,7 +73,7 @@ namespace Milki.Extensions.MixPlayer
                 Balance = balance,
                 FilePath = filePath,
                 ControlType = SlideControlType.StartNew,
-                HitsoundType = HitsoundType.Loop,
+                PlaybackType = PlaybackType.Loop,
                 LoopChannel = loopChannel
             };
         }
@@ -124,7 +124,7 @@ namespace Milki.Extensions.MixPlayer
         }
     }
 
-    public enum HitsoundType
+    public enum PlaybackType
     {
         Normal,
         Loop

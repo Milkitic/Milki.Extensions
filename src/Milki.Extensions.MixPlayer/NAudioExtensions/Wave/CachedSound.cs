@@ -130,7 +130,7 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave
 
         private static async Task<CachedSound?> GetOrCreateCacheSound(string path, bool isDefault)
         {
-            var logger = Configuration.GetLogger<CachedSound>();
+            var logger = Configuration.Instance.GetLogger<CachedSound>();
 
             string newPath = path;
             if (!File.Exists(newPath))

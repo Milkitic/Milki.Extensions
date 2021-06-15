@@ -11,7 +11,7 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave
     /// </summary>
     internal static class WaveFormatFactory
     {
-        private static readonly ILogger? Logger = Configuration.GetCurrentClassLogger();
+        private static readonly ILogger? Logger = Configuration.Instance.GetCurrentClassLogger();
 
         private static int _sampleRate = 44100;
         private static int _bits = 16;
@@ -88,7 +88,7 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave
 
         public static async Task<MyAudioFileReader> GetResampledAudioFileReader(string path)
         {
-            var cache = Path.Combine(Configuration.CacheDir,
+            var cache = Path.Combine(Configuration.Instance.CacheDir,
                 $"{Guid.NewGuid().ToString().Replace("-", "")}.sound");
             var stream = await Resample(path, cache).ConfigureAwait(false);
             return stream is MyAudioFileReader afr ? afr : new MyAudioFileReader(cache);
@@ -127,7 +127,7 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave
         {
             if (!File.Exists(path))
             {
-                path = Path.Combine(Configuration.DefaultDir, "blank.wav");
+                path = Path.Combine(Configuration.Instance.DefaultDir, "blank.wav");
             }
 
             return await Task.Run(() =>

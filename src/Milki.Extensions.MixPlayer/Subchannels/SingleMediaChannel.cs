@@ -26,7 +26,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
         private int? _referenceOffset;
         private Task? _backoffTask;
 
-        private static readonly ILogger? Logger = Configuration.GetCurrentClassLogger();
+        private static readonly ILogger? Logger = Configuration.Instance.GetCurrentClassLogger();
 
         public override float Volume
         {
@@ -36,7 +36,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
 
         public override TimeSpan Duration { get; protected set; }
 
-        public override TimeSpan ChannelStartTime => TimeSpan.FromMilliseconds(Configuration.GeneralOffset);
+        public override TimeSpan ChannelStartTime => TimeSpan.FromMilliseconds(Configuration.Instance.GeneralOffset);
 
         public sealed override float PlaybackRate { get; protected set; }
         public sealed override bool UseTempo { get; protected set; }

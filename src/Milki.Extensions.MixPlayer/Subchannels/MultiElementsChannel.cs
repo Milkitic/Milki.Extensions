@@ -15,7 +15,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
 {
     public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
     {
-        private static readonly ILogger? Logger = Configuration.GetCurrentClassLogger();
+        private static readonly ILogger? Logger = Configuration.Instance.GetCurrentClassLogger();
         private readonly VariableStopwatch _sw = new VariableStopwatch();
 
         protected List<SoundElement>? SoundElements;
@@ -46,7 +46,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
 
         public override TimeSpan Position => _sw.Elapsed;
 
-        public override TimeSpan ChannelStartTime => TimeSpan.FromMilliseconds(Configuration.GeneralOffset);
+        public override TimeSpan ChannelStartTime => TimeSpan.FromMilliseconds(Configuration.Instance.GeneralOffset);
 
         public int ManualOffset
         {
@@ -135,7 +135,8 @@ namespace Milki.Extensions.MixPlayer.Subchannels
             //    .Where(k => k.FilePath != null)
             //    .Select(k => k.FilePath));
 
-            await SetPlaybackRate(Configuration.PlaybackRate, Configuration.KeepTune).ConfigureAwait(false);
+            var configuration = Configuration.Instance;
+            await SetPlaybackRate(configuration.PlaybackRate, configuration.KeepTune).ConfigureAwait(false);
             PlayStatus = PlayStatus.Ready;
         }
 
@@ -163,7 +164,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
 
         public override async Task Stop()
         {
-            if (PlayStatus is PlayStatus.Paused or PlayStatus.Ready or PlayStatus.Unknown && 
+            if (PlayStatus is PlayStatus.Paused or PlayStatus.Ready or PlayStatus.Unknown &&
                 Position == TimeSpan.Zero) return;
 
             await CancelLoopAsync().ConfigureAwait(false);

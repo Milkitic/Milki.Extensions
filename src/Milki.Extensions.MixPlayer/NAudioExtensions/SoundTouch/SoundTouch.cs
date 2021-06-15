@@ -12,7 +12,7 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions.SoundTouch
         public SoundTouch()
         {
             var is64Bit = Environment.Is64BitProcess;
-            var libDir = Path.Combine(Configuration.SoundTouchDir);
+            var libDir = Path.Combine(Configuration.Instance.SoundTouchDir);
             AddEnvironmentPaths(libDir, is64Bit ? Path.Combine(libDir, "x64") : Path.Combine(libDir, "x86"));
             _handle = SoundTouchInterop.soundtouch_createInstance();
         }

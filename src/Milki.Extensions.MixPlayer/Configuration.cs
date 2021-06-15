@@ -5,17 +5,23 @@ using Microsoft.Extensions.Logging;
 
 namespace Milki.Extensions.MixPlayer
 {
-    public static class Configuration
+    public class Configuration
     {
-        private static ILoggerFactory? _factory;
-        internal static ILogger<T>? GetLogger<T>() => _factory?.CreateLogger<T>();
-        internal static ILogger? GetLogger(Type category)
+        private Configuration()
+        {
+        }
+
+        public static Configuration Instance { get; } = new Configuration();
+
+        private ILoggerFactory? _factory;
+        internal ILogger<T>? GetLogger<T>() => _factory?.CreateLogger<T>();
+        internal ILogger? GetLogger(Type category)
         {
             var fullName = category.Namespace + "." + category.Name;
             return _factory?.CreateLogger(fullName);
         }
 
-        public static ILogger? GetCurrentClassLogger()
+        public ILogger? GetCurrentClassLogger()
         {
             StackTrace stackTrace = new StackTrace();
             StackFrame[]? stackFrames = stackTrace.GetFrames();
@@ -29,18 +35,18 @@ namespace Milki.Extensions.MixPlayer
             return null;
         }
 
-        public static uint GeneralOffset { get; set; } = 0;
-        public static float PlaybackRate { get; set; } = 1;
-        public static bool KeepTune { get; set; } = false;
+        public uint GeneralOffset { get; set; } = 0;
+        public float PlaybackRate { get; set; } = 1;
+        public bool KeepTune { get; set; } = false;
 
-        public static string DefaultDir { get; set; } =
+        public string DefaultDir { get; set; } =
             Path.Combine(Environment.CurrentDirectory, "default");
-        public static string CacheDir { get; set; } =
+        public string CacheDir { get; set; } =
             Path.Combine(Environment.CurrentDirectory, "caching");
-        public static string SoundTouchDir { get; set; } =
+        public string SoundTouchDir { get; set; } =
             Path.Combine(Environment.CurrentDirectory, "libs", "SoundTouch");
 
-        public static void SetLogger(ILoggerFactory loggerFactory)
+        public void SetLogger(ILoggerFactory loggerFactory)
         {
             _factory = loggerFactory;
         }

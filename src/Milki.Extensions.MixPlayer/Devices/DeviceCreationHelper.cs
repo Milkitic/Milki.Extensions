@@ -11,7 +11,7 @@ namespace Milki.Extensions.MixPlayer.Devices
 {
     public static class DeviceCreationHelper
     {
-        private static readonly ILogger? Logger = Configuration.GetCurrentClassLogger();
+        private static readonly ILogger? Logger = Configuration.Instance.GetCurrentClassLogger();
         // ReSharper disable once InconsistentNaming
         private static readonly MMDeviceEnumerator _MMDeviceEnumerator;
         // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
@@ -211,7 +211,7 @@ namespace Milki.Extensions.MixPlayer.Devices
         // ReSharper disable once InconsistentNaming
         private class MMNotificationClient : IMMNotificationClient
         {
-            private static readonly ILogger? InnerLogger = Configuration.GetCurrentClassLogger();
+            private static readonly ILogger? InnerLogger = Configuration.Instance.GetCurrentClassLogger();
             public MMNotificationClient()
             {
                 //_realEnumerator.RegisterEndpointNotificationCallback();
