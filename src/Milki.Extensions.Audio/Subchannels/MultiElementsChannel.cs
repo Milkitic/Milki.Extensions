@@ -11,32 +11,34 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Milki.Extensions.Audio.Subchannels
 {
     public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
     {
-        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+        private static readonly ILogger? Logger = Configuration.GetCurrentClassLogger();
         private readonly VariableStopwatch _sw = new VariableStopwatch();
 
-        protected List<SoundElement> SoundElements;
-        public ReadOnlyCollection<SoundElement> SoundElementCollection => new ReadOnlyCollection<SoundElement>(SoundElements);
-        protected readonly SingleMediaChannel ReferenceChannel;
-        private ConcurrentQueue<SoundElement> _soundElementsQueue;
+        protected List<SoundElement>? SoundElements;
+        public IReadOnlyCollection<SoundElement>? SoundElementCollection =>
+            SoundElements == null ? null : new ReadOnlyCollection<SoundElement>(SoundElements);
+        protected readonly SingleMediaChannel? ReferenceChannel;
+        private ConcurrentQueue<SoundElement>? _soundElementsQueue;
 
-        private VolumeSampleProvider _volumeProvider;
+        private VolumeSampleProvider? _volumeProvider;
         private bool _isVolumeEnabled = false;
 
-        private Task _playingTask;
+        private Task? _playingTask;
         //private Task _calibrationTask;
-        private CancellationTokenSource _cts;
+        private CancellationTokenSource? _cts;
         private readonly object _skipLock = new object();
 
-        private BalanceSampleProvider _sliderSlideBalance;
-        private VolumeSampleProvider _sliderSlideVolume;
-        private BalanceSampleProvider _sliderAdditionBalance;
-        private VolumeSampleProvider _sliderAdditionVolume;
-        private MemoryStream _lastSliderStream;
+        private BalanceSampleProvider? _sliderSlideBalance;
+        private VolumeSampleProvider? _sliderSlideVolume;
+        private BalanceSampleProvider? _sliderAdditionBalance;
+        private VolumeSampleProvider? _sliderAdditionVolume;
+        private MemoryStream? _lastSliderStream;
         private float _playbackRate;
 
         public bool IsPlayRunning => _playingTask != null &&
@@ -66,11 +68,11 @@ namespace Milki.Extensions.Audio.Subchannels
 
         public float BalanceFactor { get; set; } = 0.35f;
 
-        public MixingSampleProvider Submixer { get; protected set; }
+        public MixingSampleProvider? Submixer { get; protected set; }
 
         public MultiElementsChannel(AudioPlaybackEngine engine,
             bool enableVolume = true,
-            SingleMediaChannel referenceChannel = null) : base(engine)
+            SingleMediaChannel? referenceChannel = null) : base(engine)
         {
             if (!enableVolume) Submixer = engine.RootMixer;
             ReferenceChannel = referenceChannel;
@@ -97,35 +99,38 @@ namespace Milki.Extensions.Audio.Subchannels
             };
 
             await RequeueAsync(TimeSpan.Zero).ConfigureAwait(false);
+            var elements = SoundElements ?? new List<SoundElement>();
 
-            var ordered = SoundElements.OrderBy(k => k.Offset).ToArray();
-            var last9Element = ordered.Skip(ordered.Length - 9).ToArray();
-            var max = TimeSpan.FromMilliseconds(last9Element.Length == 0 ? 0 : last9Element.Max(k =>
-                ((k.ControlType == SlideControlType.None) || (k.ControlType == SlideControlType.StartNew))
-                ? k.NearlyPlayEndTime
-                : 0
-            ));
+            //var ordered = soundElements.OrderBy(k => k.Offset).ToArray();
+            var lasts = elements
+                .Skip(elements.Count > 9 ? elements.Count - 9 : elements.Count)
+                .AsParallel()
+                .Select(async k => (k, await k.GetNearEndTimeAsync()));
+            await Task.WhenAll(lasts);
+            var last9Elements = lasts.Select(k => k.Result).ToArray();
+
+            var max = TimeSpan.FromMilliseconds(last9Elements.Length == 0
+                ? 0
+                : last9Elements.Max(k => k.Item2));
 
             Duration = MathUtils.Max(
-                TimeSpan.FromMilliseconds(SoundElements.Count == 0 ? 0 : SoundElements.Max(k => k.Offset)), max);
+                TimeSpan.FromMilliseconds(elements.Count == 0 ? 0 : elements.Max(k => k.Offset)), max);
 
-            await Task.Run(() =>
-            {
-                SoundElements
-                    .Where(k => k.FilePath == null &&
-                                (k.ControlType == SlideControlType.None || k.ControlType == SlideControlType.StartNew))
-                    .AsParallel()
-                    .WithDegreeOfParallelism(Environment.ProcessorCount > 1 ? Environment.ProcessorCount - 1 : 1)
-                    .ForAll(k => CachedSound.CreateCacheSounds(new[] { k.FilePath }).Wait());
-            }).ConfigureAwait(false);
-
-
+            //await Task.Run(() =>
+            //{
+            //    elements
+            //        .Where(k => k.FilePath != null &&
+            //                    (k.ControlType == SlideControlType.None || k.ControlType == SlideControlType.StartNew))
+            //        .AsParallel()
+            //        .WithDegreeOfParallelism(Environment.ProcessorCount > 1 ? Environment.ProcessorCount - 1 : 1)
+            //        .ForAll(k => CachedSound.CreateCacheSounds(new[] { k.FilePath }).Wait());
+            //}).ConfigureAwait(false);
+            
             //await CachedSound.CreateCacheSounds(SoundElements
             //    .Where(k => k.FilePath != null)
             //    .Select(k => k.FilePath));
 
-            await SetPlaybackRate(AppSettings.Default?.Play?.PlaybackRate ?? 1, AppSettings.Default?.Play?.PlayUseTempo ?? true)
-                .ConfigureAwait(false);
+            await SetPlaybackRate(Configuration.PlaybackRate, Configuration.KeepTune).ConfigureAwait(false);
             PlayStatus = PlayStatus.Ready;
         }
 
@@ -172,8 +177,11 @@ namespace Milki.Extensions.Audio.Subchannels
         {
             if (time == Position) return;
 
-            Submixer.RemoveMixerInput(_sliderSlideBalance);
-            Submixer.RemoveMixerInput(_sliderAdditionBalance);
+            if (Submixer != null)
+            {
+                Submixer.RemoveMixerInput(_sliderSlideBalance);
+                Submixer.RemoveMixerInput(_sliderAdditionBalance);
+            }
 
             await Task.Run(() =>
             {
@@ -183,7 +191,7 @@ namespace Milki.Extensions.Audio.Subchannels
                     PlayStatus = PlayStatus.Reposition;
 
                     _sw.SkipTo(time);
-                    Logger.Debug("{0} want skip: {1}; actual: {2}", Description, time, Position);
+                    Logger?.LogDebug("{0} want skip: {1}; actual: {2}", Description, time, Position);
                     RequeueAsync(time).Wait();
 
                     PlayStatus = status;
@@ -222,9 +230,9 @@ namespace Milki.Extensions.Audio.Subchannels
 
             _playingTask = new Task(async () =>
             {
-                while (_soundElementsQueue.Count > 0)
+                while (_soundElementsQueue!.Count > 0)
                 {
-                    if (_cts.Token.IsCancellationRequested)
+                    if (_cts!.IsCancellationRequested)
                     {
                         _sw.Stop();
                         break;
@@ -242,7 +250,7 @@ namespace Milki.Extensions.Audio.Subchannels
                     if (!TaskEx.TaskSleep(1, _cts)) break;
                 }
 
-                if (!_cts.Token.IsCancellationRequested)
+                if (!_cts!.Token.IsCancellationRequested)
                 {
                     PlayStatus = PlayStatus.Finished;
                     await SkipTo(TimeSpan.Zero).ConfigureAwait(false);
@@ -253,7 +261,7 @@ namespace Milki.Extensions.Audio.Subchannels
 
         public async Task TakeElements(int offset)
         {
-            while (_soundElementsQueue.TryPeek(out var soundElement) &&
+            while (_soundElementsQueue!.TryPeek(out var soundElement) &&
                    soundElement.Offset <= offset &&
                    _soundElementsQueue.TryDequeue(out soundElement))
             {
@@ -268,7 +276,7 @@ namespace Milki.Extensions.Audio.Subchannels
                     {
                         case SlideControlType.None:
                             var cachedSound = await soundElement.GetCachedSoundAsync().ConfigureAwait(false);
-                            var flag = Submixer.PlaySound(cachedSound, soundElement.Volume,
+                            var flag = Submixer!.PlaySound(cachedSound, soundElement.Volume,
                                 soundElement.Balance * BalanceFactor);
                             if (soundElement.SubSoundElement != null)
                                 soundElement.SubSoundElement.RelatedProvider = flag;
@@ -277,14 +285,15 @@ namespace Milki.Extensions.Audio.Subchannels
                         case SlideControlType.StopNote:
                             if (soundElement.RelatedProvider != null)
                             {
-                                Submixer.RemoveMixerInput(soundElement.RelatedProvider);
+                                Submixer!.RemoveMixerInput(soundElement.RelatedProvider);
                                 var fadeOut = new FadeInOutSampleProvider(soundElement.RelatedProvider);
                                 fadeOut.BeginFadeOut(400);
                                 Submixer.AddMixerInput(fadeOut);
                             }
+
                             break;
                         case SlideControlType.StartNew:
-                            Submixer.RemoveMixerInput(_sliderSlideBalance);
+                            Submixer!.RemoveMixerInput(_sliderSlideBalance);
                             Submixer.RemoveMixerInput(_sliderAdditionBalance);
                             cachedSound = await soundElement.GetCachedSoundAsync().ConfigureAwait(false);
                             _lastSliderStream?.Dispose();
@@ -295,7 +304,7 @@ namespace Milki.Extensions.Audio.Subchannels
                             _lastSliderStream = new MemoryStream(byteArray);
                             var myf = new RawSourceWaveStream(_lastSliderStream, cachedSound.WaveFormat);
                             var loop = new LoopStream(myf);
-                            if (soundElement.HitsoundType.HasFlag(HitsoundTypeStore.Slide))
+                            if (soundElement.HitsoundType.HasFlag(HitsoundType.Loop))
                             {
                                 _sliderSlideVolume = new VolumeSampleProvider(loop.ToSampleProvider())
                                 {
@@ -307,7 +316,7 @@ namespace Milki.Extensions.Audio.Subchannels
                                 };
                                 Submixer.AddMixerInput(_sliderSlideBalance);
                             }
-                            else if (soundElement.HitsoundType.HasFlag(HitsoundTypeStore.SlideWhistle))
+                            else if (soundElement.HitsoundType.HasFlag(HitsoundType.Loop1))
                             {
                                 _sliderAdditionVolume = new VolumeSampleProvider(loop.ToSampleProvider())
                                 {
@@ -322,7 +331,7 @@ namespace Milki.Extensions.Audio.Subchannels
 
                             break;
                         case SlideControlType.StopRunning:
-                            Submixer.RemoveMixerInput(_sliderSlideBalance);
+                            Submixer!.RemoveMixerInput(_sliderSlideBalance);
                             Submixer.RemoveMixerInput(_sliderAdditionBalance);
                             break;
                         case SlideControlType.ChangeBalance:
@@ -339,7 +348,7 @@ namespace Milki.Extensions.Audio.Subchannels
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(ex, "Error while play target element. Source: {0}; ControlType",
+                    Logger?.LogError(ex, "Error while play target element. Source: {0}; ControlType",
                         soundElement.FilePath, soundElement.ControlType);
                 }
             }
@@ -350,8 +359,12 @@ namespace Milki.Extensions.Audio.Subchannels
             var queue = new ConcurrentQueue<SoundElement>();
             if (SoundElements == null)
             {
-                var o = new List<SoundElement>(await GetSoundElements().ConfigureAwait(false));
-                SoundElements = new List<SoundElement>(o.Concat(o.Where(k => k.SubSoundElement != null).Select(k => k.SubSoundElement)));
+                var elements = new List<SoundElement>(await GetSoundElements().ConfigureAwait(false));
+                var subElements = elements
+                    .Where(k => k.SubSoundElement != null)
+                    .Select(k => k.SubSoundElement!);
+                elements.AddRange(subElements);
+                SoundElements = elements;
                 Duration = TimeSpan.FromMilliseconds(SoundElements.Count == 0 ? 0 : SoundElements.Max(k => k.Offset));
                 SoundElements.Sort(new SoundElementTimingComparer());
             }
@@ -388,7 +401,7 @@ namespace Milki.Extensions.Audio.Subchannels
             }
 
             await TaskEx.WhenAllSkipNull(_playingTask/*, _calibrationTask*/).ConfigureAwait(false);
-            Logger.Debug(@"{0} task canceled.", Description);
+            Logger?.LogDebug(@"{0} task canceled.", Description);
         }
 
         public abstract Task<IEnumerable<SoundElement>> GetSoundElements();
@@ -396,10 +409,10 @@ namespace Milki.Extensions.Audio.Subchannels
         public override async ValueTask DisposeAsync()
         {
             await Stop().ConfigureAwait(false);
-            Logger.Debug($"Disposing: Stopped.");
+            Logger?.LogDebug($"Disposing: Stopped.");
 
             _cts?.Dispose();
-            Logger.Debug($"Disposing: Disposed {nameof(_cts)}.");
+            Logger?.LogDebug($"Disposing: Disposed {nameof(_cts)}.");
             if (_volumeProvider != null)
                 Engine.RemoveRootSample(_volumeProvider);
             //await base.DisposeAsync().ConfigureAwait(false);

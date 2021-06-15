@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Milki.Extensions.Audio.NAudioExtensions;
 using Milki.Extensions.Audio.NAudioExtensions.SoundTouch;
 using Milki.Extensions.Audio.NAudioExtensions.Wave;
@@ -8,7 +9,6 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
 namespace Milki.Extensions.Audio.Subchannels
 {
@@ -17,14 +17,14 @@ namespace Milki.Extensions.Audio.Subchannels
         private readonly string _path;
 
         private MyAudioFileReader? _fileReader;
-        private VariableSpeedSampleProvider _speedProvider;
-        private ISampleProvider _actualRoot;
+        private VariableSpeedSampleProvider? _speedProvider;
+        private ISampleProvider? _actualRoot;
 
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
         private readonly VariableStopwatch _sw = new VariableStopwatch();
         private ConcurrentQueue<double> _offsetQueue = new ConcurrentQueue<double>();
         private int? _referenceOffset;
-        private Task _backoffTask;
+        private Task? _backoffTask;
 
         private static readonly ILogger? Logger = Configuration.GetCurrentClassLogger();
 
@@ -91,7 +91,7 @@ namespace Milki.Extensions.Audio.Subchannels
                             {
                                 var avg = (int)_offsetQueue.Average();
                                 stdOffset = avg;
-                                Logger.Debug("{0}: avg offset: {1}", Description, avg);
+                                Logger?.LogDebug("{0}: avg offset: {1}", Description, avg);
                             }
                         }
                         else
@@ -121,7 +121,7 @@ namespace Milki.Extensions.Audio.Subchannels
         {
             if (PlayStatus == PlayStatus.Playing) return;
 
-            if (!Engine.RootMixer.MixerInputs.Contains(_actualRoot))
+            if (!Engine.RootMixer.MixerInputs.Contains(_actualRoot) && _speedProvider != null)
                 Engine.RootMixer.AddMixerInput(_speedProvider, SampleControl, out _actualRoot);
             PlayStatus = PlayStatus.Playing;
             _sw.Start();
@@ -144,7 +144,7 @@ namespace Milki.Extensions.Audio.Subchannels
             if (PlayStatus == PlayStatus.Paused && Position == TimeSpan.Zero) return;
 
             Engine.RootMixer.RemoveMixerInput(_actualRoot);
-            Logger.Debug("{0} will skip.", Description);
+            Logger?.LogDebug("{0} will skip.", Description);
             await SkipTo(TimeSpan.Zero).ConfigureAwait(false);
             PlayStatus = PlayStatus.Paused;
             _sw.Reset();
@@ -167,14 +167,17 @@ namespace Milki.Extensions.Audio.Subchannels
 
             var status = PlayStatus;
             PlayStatus = PlayStatus.Reposition;
-            if (_fileReader.TotalTime > TimeSpan.Zero)
+            if (_fileReader != null && _fileReader.TotalTime > TimeSpan.Zero)
+            {
                 _fileReader.CurrentTime = time >= _fileReader.TotalTime
-                    ? _fileReader.TotalTime - TimeSpan.FromMilliseconds(1)
-                    : time;
-            _speedProvider.Reposition();
+                       ? _fileReader.TotalTime - TimeSpan.FromMilliseconds(1)
+                       : time;
+            }
+
+            _speedProvider?.Reposition();
             Position = time/*_fileReader.CurrentTime*/;
             RaisePositionUpdated(Position, true);
-            Logger.Debug("{0} skip: want: {1}; actual: {2}", Description, time, Position);
+            Logger?.LogDebug("{0} skip: want: {1}; actual: {2}", Description, time, Position);
             _sw.SkipTo(time);
 
             _referenceOffset = null;
@@ -185,10 +188,14 @@ namespace Milki.Extensions.Audio.Subchannels
 
         public override async Task Sync(TimeSpan time)
         {
-            _fileReader.CurrentTime = time >= _fileReader.TotalTime
-                ? _fileReader.TotalTime - TimeSpan.FromMilliseconds(1)
-                : time;
-            _speedProvider.Reposition();
+            if (_fileReader != null)
+            {
+                _fileReader.CurrentTime = time >= _fileReader.TotalTime
+                    ? _fileReader.TotalTime - TimeSpan.FromMilliseconds(1)
+                    : time;
+            }
+
+            _speedProvider?.Reposition();
             Position = time/*_fileReader.CurrentTime*/;
             RaisePositionUpdated(Position, false);
             _sw.SkipTo(time);
@@ -201,13 +208,13 @@ namespace Milki.Extensions.Audio.Subchannels
             if (!PlaybackRate.Equals(rate))
             {
                 PlaybackRate = rate;
-                _speedProvider.PlaybackRate = rate;
+                if (_speedProvider != null) _speedProvider.PlaybackRate = rate;
                 _sw.Rate = rate;
             }
 
             if (UseTempo != useTempo)
             {
-                _speedProvider.SetSoundTouchProfile(new SoundTouchProfile(useTempo, false));
+                _speedProvider?.SetSoundTouchProfile(new SoundTouchProfile(useTempo, false));
                 UseTempo = useTempo;
             }
 
@@ -219,26 +226,26 @@ namespace Milki.Extensions.Audio.Subchannels
         {
             try
             {
-                _cts?.Cancel();
+                _cts.Cancel();
             }
             catch (ObjectDisposedException)
             {
             }
 
-            Logger.Debug($"Disposing: Canceled {nameof(_cts)}.");
+            Logger?.LogDebug($"Disposing: Canceled {nameof(_cts)}.");
             if (_backoffTask != null)
                 await _backoffTask.ConfigureAwait(false);
-            Logger.Debug($"Disposing: Stopped task {nameof(_backoffTask)}.");
-            _cts?.Dispose();
-            Logger.Debug($"Disposing: Disposed {nameof(_cts)}.");
+            Logger?.LogDebug($"Disposing: Stopped task {nameof(_backoffTask)}.");
+            _cts.Dispose();
+            Logger?.LogDebug($"Disposing: Disposed {nameof(_cts)}.");
             await Stop().ConfigureAwait(false);
-            Logger.Debug($"Disposing: Stopped.");
+            Logger?.LogDebug($"Disposing: Stopped.");
             //await base.DisposeAsync().ConfigureAwait(false);
             //Logger.Debug($"Disposing: Disposed base.");
             _speedProvider?.Dispose();
-            Logger.Debug($"Disposing: Disposed {nameof(_speedProvider)}.");
-            _fileReader?.Dispose();
-            Logger.Debug($"Disposing: Disposed {nameof(_fileReader)}.");
+            Logger?.LogDebug($"Disposing: Disposed {nameof(_speedProvider)}.");
+            if (_fileReader != null) await _fileReader.DisposeAsync();
+            Logger?.LogDebug($"Disposing: Disposed {nameof(_fileReader)}.");
         }
     }
 }

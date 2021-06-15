@@ -5,6 +5,7 @@ using NAudio.Wave;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace Milki.Extensions.Audio.Devices
 {
@@ -39,16 +40,19 @@ namespace Milki.Extensions.Audio.Devices
             }
         }
 
-        public static IWavePlayer CreateDevice(out DeviceInfo actualDeviceInfo, in DeviceInfo? deviceInfo = null)
+        public static IWavePlayer CreateDevice(out DeviceInfo actualDeviceInfo,
+            in DeviceInfo? deviceInfo = null,
+            SynchronizationContext? context = null)
         {
+            DeviceInfo actual;
             if (deviceInfo is null) // use default profile
             {
-                actualDeviceInfo = GetDefaultDeviceInfo();
+                actual = GetDefaultDeviceInfo();
             }
             else
             {
                 var hashSet = GetAllAvailableDevices();
-                actualDeviceInfo = hashSet.TryGetValue(deviceInfo, out var foundResult)
+                actual = hashSet.TryGetValue(deviceInfo, out var foundResult)
                     ? foundResult
                     : GetDefaultDeviceInfo();
             }
@@ -56,48 +60,62 @@ namespace Milki.Extensions.Audio.Devices
             IWavePlayer? device = null;
             try
             {
+                Func<IWavePlayer> func;
+
                 int safeLatency;
-                switch (actualDeviceInfo.Provider)
+                switch (actual.Provider)
                 {
                     case Providers.DirectSound:
                         safeLatency = 40;
-                        device = actualDeviceInfo.Equals(DeviceInfo.DefaultDirectSound)
+                        var actual1 = actual;
+                        func = () => actual1.Equals(DeviceInfo.DefaultDirectSound)
                             ? new DirectSoundOut(safeLatency)
-                            : new DirectSoundOut(Guid.Parse(actualDeviceInfo.Id!),
-                                Math.Max(actualDeviceInfo.Latency, safeLatency));
+                            : new DirectSoundOut(Guid.Parse(actual1.Id!),
+                                Math.Max(actual1.Latency, safeLatency));
                         break;
                     case Providers.Wasapi:
                         safeLatency = 1;
-                        if (actualDeviceInfo.Equals(DeviceInfo.DefaultWasapi))
+                        if (actual.Equals(DeviceInfo.DefaultWasapi))
                         {
-                            device = new WasapiOut(AudioClientShareMode.Shared, safeLatency);
+                            func = () => new WasapiOut(AudioClientShareMode.Shared, safeLatency);
                         }
                         else
                         {
-                            device = new WasapiOut(actualDeviceInfo.MMDevice,
-                                actualDeviceInfo.WasapiConfig?.IsExclusiveMode == true
+                            var actual2 = actual;
+                            func = () => new WasapiOut(actual2.MMDevice,
+                                actual2.WasapiConfig?.IsExclusiveMode == true
                                     ? AudioClientShareMode.Exclusive
                                     : AudioClientShareMode.Shared, true,
-                                actualDeviceInfo.Latency);
+                                actual2.Latency);
                         }
 
                         break;
                     case Providers.Asio:
-                        device = new AsioOut(actualDeviceInfo.Name);
+                        var actual3 = actual;
+                        func = () => new AsioOut(actual3.Name);
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException(nameof(deviceInfo.Provider), actualDeviceInfo.Provider, null);
+                        throw new ArgumentOutOfRangeException(nameof(deviceInfo.Provider), actual.Provider, null);
                 }
+
+                if (context != null)
+                    context.Send(_ => device = func.Invoke(), null);
+                else
+                    device = func.Invoke();
             }
             catch (Exception ex)
             {
                 Logger?.LogError(ex, "Error while creating device. Force to use DirectSound!!");
                 device?.Dispose();
-                actualDeviceInfo = DeviceInfo.DefaultDirectSound;
-                device = new DirectSoundOut(40);
+                actual = DeviceInfo.DefaultDirectSound;
+                if (context != null)
+                    context.Send(_ => device = new DirectSoundOut(40), null);
+                else
+                    device = new DirectSoundOut(40);
             }
 
-            return device;
+            actualDeviceInfo = actual;
+            return device!;
         }
 
         private static DeviceInfo GetDefaultDeviceInfo()

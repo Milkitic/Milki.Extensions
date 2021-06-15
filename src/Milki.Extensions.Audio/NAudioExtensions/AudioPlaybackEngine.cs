@@ -5,6 +5,8 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Milki.Extensions.Audio.Devices;
+using Milki.Extensions.Audio.Threading;
 
 namespace Milki.Extensions.Audio.NAudioExtensions
 {
@@ -13,11 +15,7 @@ namespace Milki.Extensions.Audio.NAudioExtensions
         private readonly IWavePlayer? _outputDevice;
         public event Action<AudioPlaybackEngine, TimeSpan, TimeSpan>? Updated;
 
-        private readonly TaskCompletionSource<object?>? _creationTask;
-        private readonly TaskCompletionSource<object?>? _disposingTask;
-        private readonly TaskCompletionSource<object?>? _completeTask;
-
-        public SynchronizationContext DeviceSynchronizationContext { get; private set; }
+        public SynchronizationContext Context { get; set; }
 
         private readonly VolumeSampleProvider _volumeProvider;
         private readonly TimingSampleProvider _timingProvider;
@@ -33,44 +31,36 @@ namespace Milki.Extensions.Audio.NAudioExtensions
 
         public AudioPlaybackEngine()
         {
+            Context = SynchronizationContext.Current ??
+                      new StaSynchronizationContext("AudioPlaybackEngine_STA");
             RootMixer = new MixingSampleProvider(WaveFormatFactory.IeeeWaveFormat)
             {
                 ReadFully = true
             };
             _volumeProvider = new VolumeSampleProvider(RootMixer);
             _timingProvider = new TimingSampleProvider(_volumeProvider);
-            _timingProvider.Updated += (a, b) => Updated?.Invoke(this, a, b);
-            DeviceSynchronizationContext = SynchronizationContext.Current;
+            _timingProvider.Updated += (a, b) =>
+            {
+                Context.Send(_ => Updated?.Invoke(this, a, b), null);
+            };
         }
 
-        public AudioPlaybackEngine(IWavePlayer outputDevice)
+        public AudioPlaybackEngine(DeviceInfo deviceInfo)
         {
+            Context = SynchronizationContext.Current ??
+                      new StaSynchronizationContext("AudioPlaybackEngine_STA");
             RootMixer = new MixingSampleProvider(WaveFormatFactory.IeeeWaveFormat)
             {
                 ReadFully = true
             };
             _volumeProvider = new VolumeSampleProvider(RootMixer);
             _timingProvider = new TimingSampleProvider(_volumeProvider);
-            _timingProvider.Updated += (a, b) => Updated?.Invoke(this, a, b);
-            _outputDevice = outputDevice;
-
-            _creationTask = new TaskCompletionSource<object?>();
-            _disposingTask = new TaskCompletionSource<object?>();
-            _completeTask = new TaskCompletionSource<object?>();
-
-            SynchronizationContext sc = SynchronizationContext.Current;
-            var startThread = new Thread(() =>
+            _timingProvider.Updated += (a, b) =>
             {
-                sc = SynchronizationContext.Current;
-                DeviceInstanceControl();
-            })
-            { IsBackground = true };
-            startThread.SetApartmentState(ApartmentState.STA);
-            startThread.Start();
-
-            _creationTask.Task.Wait();
-
-            DeviceSynchronizationContext = sc;
+                Context.Send(_ => Updated?.Invoke(this, a, b), null);
+            };
+            _outputDevice = DeviceCreationHelper.CreateDevice(out var actualDeviceInfo, deviceInfo, Context);
+            Context.Send(_ => _outputDevice.Init(_timingProvider), null);
             _outputDevice.Play();
         }
 
@@ -86,25 +76,20 @@ namespace Milki.Extensions.Audio.NAudioExtensions
                 RootMixer.RemoveMixerInput(input);
         }
 
-        public async Task<ISampleProvider> PlayRootSound(string path, SampleControl sampleControl)
+        public async Task<ISampleProvider?> PlayRootSound(string path, SampleControl sampleControl)
         {
-            var rootSample = await RootMixer.PlaySound(path, sampleControl).ConfigureAwait(false);
+            var rootSample = await RootMixer
+                .PlaySound(path, sampleControl)
+                .ConfigureAwait(false);
             return rootSample;
         }
 
         public void Dispose()
         {
-            _disposingTask?.SetResult(default);
-            _completeTask?.Task.Wait();
-        }
-
-        private void DeviceInstanceControl()
-        {
-            _outputDevice!.Init(_timingProvider);
-            _creationTask!.SetResult(default);
-            _disposingTask!.Task.Wait();
-            _outputDevice!.Dispose();
-            _completeTask!.SetResult(default);
+            if (_outputDevice != null)
+                Context.Send(_ => _outputDevice.Dispose(), null);
+            if (Context is IDisposable id)
+                id.Dispose();
         }
     }
 }

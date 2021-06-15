@@ -1,5 +1,5 @@
-﻿using System.IO;
-using NAudio.Wave;
+﻿using NAudio.Wave;
+using System.IO;
 
 namespace Milki.Extensions.Audio.NAudioExtensions.Wave
 {

@@ -28,16 +28,16 @@ namespace Milki.Extensions.Audio.Utilities
 
     public static class TaskEx
     {
-        public static bool TaskSleep(int milliseconds, CancellationTokenSource cts)
+        public static bool TaskSleep(int milliseconds, CancellationTokenSource? cts = null)
         {
             return TaskSleep(TimeSpan.FromMilliseconds(milliseconds), cts);
         }
 
-        public static bool TaskSleep(TimeSpan time, CancellationTokenSource cts)
+        public static bool TaskSleep(TimeSpan time, CancellationTokenSource? cts = null)
         {
             try
             {
-                Task.Delay(time).Wait(cts.Token);
+                Task.Delay(time).Wait(cts?.Token ?? CancellationToken.None);
             }
             catch (TaskCanceledException)
             {

@@ -8,7 +8,7 @@ namespace Milki.Extensions.Audio.NAudioExtensions.Wave
         private ISampleProvider _sourceProvider;
         public TimeSpan CurrentTime { get; private set; } = TimeSpan.Zero;
 
-        public event Action<TimeSpan, TimeSpan> Updated;
+        public event Action<TimeSpan, TimeSpan>? Updated;
 
         public TimingSampleProvider(ISampleProvider sourceProvider)
         {

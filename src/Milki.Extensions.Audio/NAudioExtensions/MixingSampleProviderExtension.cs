@@ -7,14 +7,14 @@ namespace Milki.Extensions.Audio.NAudioExtensions
 {
     internal static class MixingSampleProviderExtension
     {
-        internal static ISampleProvider? PlaySound(this MixingSampleProvider mixer, CachedSound sound,
+        internal static ISampleProvider? PlaySound(this MixingSampleProvider mixer, CachedSound? sound,
             SampleControl sampleControl)
         {
             PlaySound(mixer, sound, sampleControl, out var rootSample);
             return rootSample;
         }
 
-        internal static ISampleProvider? PlaySound(this MixingSampleProvider mixer, CachedSound sound,
+        internal static ISampleProvider? PlaySound(this MixingSampleProvider mixer, CachedSound? sound,
             float volume, float balance)
         {
             PlaySound(mixer, sound, volume, balance, out var rootSample);

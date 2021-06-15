@@ -40,7 +40,7 @@ namespace Milki.Extensions.Audio
             {
                 if (value == _playStatus) return;
                 _playStatus = value;
-                Engine.DeviceSynchronizationContext.Send(_ => PlayStatusChanged?.Invoke(value), null);
+                Engine.Context.Send(_ => PlayStatusChanged?.Invoke(value), null);
             }
         }
 
@@ -56,7 +56,7 @@ namespace Milki.Extensions.Audio
         protected readonly AudioPlaybackEngine Engine;
 
         private readonly List<Subchannel> _subchannels = new List<Subchannel>();
-        private readonly IWavePlayer _outputDevice;
+        //private readonly IWavePlayer _outputDevice;
 
         private readonly VariableStopwatch _innerTimelineSw = new VariableStopwatch();
         private CancellationTokenSource? _cts;
@@ -72,7 +72,7 @@ namespace Milki.Extensions.Audio
 
         public MultichannelPlayer(DeviceInfo deviceInfo)
         {
-            _outputDevice = DeviceCreationHelper.CreateDevice(out var actualDeviceInfo, deviceInfo);
+            #region Resample? 
 
             //try
             //{
@@ -118,7 +118,8 @@ namespace Milki.Extensions.Audio
             //    WaveFormatFactory.SampleRate = 44100;
             //}
 
-            Engine = new AudioPlaybackEngine(_outputDevice);
+            #endregion
+            Engine = new AudioPlaybackEngine(deviceInfo);
         }
 
         public virtual async Task Initialize()
@@ -376,7 +377,7 @@ namespace Milki.Extensions.Audio
         protected void RaisePositionUpdated(TimeSpan value, bool force)
         {
             if (!force && DateTime.Now - _lastPositionUpdateTime < AutoRefreshInterval) return;
-            PositionUpdated?.Invoke(value);
+            Engine.Context.Send(_ => PositionUpdated?.Invoke(value), null);
             _lastPositionUpdateTime = DateTime.Now;
         }
 

@@ -24,7 +24,16 @@ namespace Milki.Extensions.Audio
         public HitsoundType HitsoundType { get; private set; }
         public SlideControlType ControlType { get; private set; } = SlideControlType.None;
 
-        public double NearlyPlayEndTime()
+        public bool HasSound => FilePath != null;
+
+        public async Task<double> GetNearEndTimeAsync()
+        {
+            var cachedSound = await GetCachedSoundAsync();
+            if (cachedSound == null) return 0;
+            return cachedSound.Duration.TotalMilliseconds + Offset;
+        }
+
+        public double GetNearEndTime()
         {
             var cachedSound = GetCachedSoundAsync().Result;
             if (cachedSound == null) return 0;
@@ -116,6 +125,7 @@ namespace Milki.Extensions.Audio
     public enum HitsoundType
     {
         Normal,
-        Loop
+        Loop,
+        Loop1
     }
 }

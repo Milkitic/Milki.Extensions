@@ -40,7 +40,7 @@ namespace Milki.Extensions.Audio
         protected void RaisePositionUpdated(TimeSpan value, bool force)
         {
             if (!force && DateTime.Now - _lastPositionUpdateTime < AutoRefreshInterval) return;
-            PositionUpdated?.Invoke(value);
+            Engine.Context.Send(_ => PositionUpdated?.Invoke(value), null);
             _lastPositionUpdateTime = DateTime.Now;
         }
 
@@ -56,7 +56,7 @@ namespace Milki.Extensions.Audio
             {
                 if (value == _playStatus) return;
                 _playStatus = value;
-                PlayStatusChanged?.Invoke(value);
+                Engine.Context.Send(_ => PlayStatusChanged?.Invoke(value), null);
             }
         }
 

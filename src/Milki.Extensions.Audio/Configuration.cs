@@ -32,6 +32,9 @@ namespace Milki.Extensions.Audio
         }
 
         public static uint GeneralOffset { get; set; } = 0;
+        public static float PlaybackRate { get; set; } = 1;
+        public static bool KeepTune { get; set; } = false;
+
         public static string DefaultDir { get; set; } =
             Path.Combine(Environment.CurrentDirectory, "default");
         public static string CacheDir { get; set; } =
