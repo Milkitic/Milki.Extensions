@@ -31,7 +31,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
                 loopProvider.SetBalance(balance);
             return true;
         }
-        
+
         public bool ChangeVolume(int? loopChannel, float volume)
         {
             if (loopChannel == null) return false;
