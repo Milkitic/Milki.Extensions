@@ -34,12 +34,10 @@ namespace Milki.Extensions.Audio.Subchannels
         private CancellationTokenSource? _cts;
         private readonly object _skipLock = new object();
 
-        private BalanceSampleProvider? _sliderSlideBalance;
-        private VolumeSampleProvider? _sliderSlideVolume;
-        private BalanceSampleProvider? _sliderAdditionBalance;
-        private VolumeSampleProvider? _sliderAdditionVolume;
-        private MemoryStream? _lastSliderStream;
+        private readonly LoopProviders _loopProviders = new LoopProviders();
+        
         private float _playbackRate;
+        private readonly MixSettings _mixSettings;
 
         public bool IsPlayRunning => _playingTask != null &&
                                      !_playingTask.IsCanceled &&
@@ -66,15 +64,22 @@ namespace Milki.Extensions.Audio.Subchannels
 
         public sealed override bool UseTempo { get; protected set; }
 
-        public float BalanceFactor { get; set; } = 0.35f;
 
         public MixingSampleProvider? Submixer { get; protected set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="engine"></param>
+        /// <param name="mixSettings"></param>
+        /// <param name="referenceChannel"></param>
         public MultiElementsChannel(AudioPlaybackEngine engine,
-            bool enableVolume = true,
+            MixSettings? mixSettings = null,
             SingleMediaChannel? referenceChannel = null) : base(engine)
         {
-            if (!enableVolume) Submixer = engine.RootMixer;
+            mixSettings ??= new MixSettings();
+            _mixSettings = mixSettings;
+            if (!mixSettings.EnableVolume) Submixer = engine.RootMixer;
             ReferenceChannel = referenceChannel;
         }
 
@@ -125,7 +130,7 @@ namespace Milki.Extensions.Audio.Subchannels
             //        .WithDegreeOfParallelism(Environment.ProcessorCount > 1 ? Environment.ProcessorCount - 1 : 1)
             //        .ForAll(k => CachedSound.CreateCacheSounds(new[] { k.FilePath }).Wait());
             //}).ConfigureAwait(false);
-            
+
             //await CachedSound.CreateCacheSounds(SoundElements
             //    .Where(k => k.FilePath != null)
             //    .Select(k => k.FilePath));
@@ -177,11 +182,7 @@ namespace Milki.Extensions.Audio.Subchannels
         {
             if (time == Position) return;
 
-            if (Submixer != null)
-            {
-                Submixer.RemoveMixerInput(_sliderSlideBalance);
-                Submixer.RemoveMixerInput(_sliderAdditionBalance);
-            }
+            _loopProviders.RemoveAll(Submixer);
 
             await Task.Run(() =>
             {
@@ -277,7 +278,7 @@ namespace Milki.Extensions.Audio.Subchannels
                         case SlideControlType.None:
                             var cachedSound = await soundElement.GetCachedSoundAsync().ConfigureAwait(false);
                             var flag = Submixer!.PlaySound(cachedSound, soundElement.Volume,
-                                soundElement.Balance * BalanceFactor);
+                                soundElement.Balance * _mixSettings.BalanceFactor);
                             if (soundElement.SubSoundElement != null)
                                 soundElement.SubSoundElement.RelatedProvider = flag;
 
@@ -285,64 +286,38 @@ namespace Milki.Extensions.Audio.Subchannels
                         case SlideControlType.StopNote:
                             if (soundElement.RelatedProvider != null)
                             {
-                                Submixer!.RemoveMixerInput(soundElement.RelatedProvider);
-                                var fadeOut = new FadeInOutSampleProvider(soundElement.RelatedProvider);
-                                fadeOut.BeginFadeOut(400);
-                                Submixer.AddMixerInput(fadeOut);
+                                if (_mixSettings.ForceStopFadeoutDuration > 0)
+                                {
+                                    Submixer!.RemoveMixerInput(soundElement.RelatedProvider);
+                                    var fadeOut = new FadeInOutSampleProvider(soundElement.RelatedProvider);
+                                    fadeOut.BeginFadeOut(400);
+                                    Submixer.AddMixerInput(fadeOut);
+                                }
+                                else
+                                {
+                                    Submixer!.RemoveMixerInput(soundElement.RelatedProvider);
+                                }
                             }
 
                             break;
                         case SlideControlType.StartNew:
-                            Submixer!.RemoveMixerInput(_sliderSlideBalance);
-                            Submixer.RemoveMixerInput(_sliderAdditionBalance);
-                            cachedSound = await soundElement.GetCachedSoundAsync().ConfigureAwait(false);
-                            _lastSliderStream?.Dispose();
-                            if (cachedSound is null) continue;
-                            var byteArray = new byte[cachedSound.AudioData.Length * sizeof(float)];
-                            Buffer.BlockCopy(cachedSound.AudioData, 0, byteArray, 0, byteArray.Length);
-
-                            _lastSliderStream = new MemoryStream(byteArray);
-                            var myf = new RawSourceWaveStream(_lastSliderStream, cachedSound.WaveFormat);
-                            var loop = new LoopStream(myf);
-                            if (soundElement.HitsoundType.HasFlag(HitsoundType.Loop))
+                            if (_mixSettings.ForceMode &&
+                                soundElement.LoopChannel != null &&
+                                _loopProviders.ShouldRemoveAll(soundElement.LoopChannel.Value))
                             {
-                                _sliderSlideVolume = new VolumeSampleProvider(loop.ToSampleProvider())
-                                {
-                                    Volume = soundElement.Volume
-                                };
-                                _sliderSlideBalance = new BalanceSampleProvider(_sliderSlideVolume)
-                                {
-                                    Balance = soundElement.Balance * BalanceFactor
-                                };
-                                Submixer.AddMixerInput(_sliderSlideBalance);
-                            }
-                            else if (soundElement.HitsoundType.HasFlag(HitsoundType.Loop1))
-                            {
-                                _sliderAdditionVolume = new VolumeSampleProvider(loop.ToSampleProvider())
-                                {
-                                    Volume = soundElement.Volume
-                                };
-                                _sliderAdditionBalance = new BalanceSampleProvider(_sliderAdditionVolume)
-                                {
-                                    Balance = soundElement.Balance * BalanceFactor
-                                };
-                                Submixer.AddMixerInput(_sliderAdditionBalance);
+                                _loopProviders.RemoveAll(Submixer);
                             }
 
+                            await _loopProviders.CreateAsync(soundElement, Submixer, _mixSettings.BalanceFactor);
                             break;
                         case SlideControlType.StopRunning:
-                            Submixer!.RemoveMixerInput(_sliderSlideBalance);
-                            Submixer.RemoveMixerInput(_sliderAdditionBalance);
+                            _loopProviders.Remove(soundElement.LoopChannel, Submixer);
                             break;
                         case SlideControlType.ChangeBalance:
-                            if (_sliderAdditionBalance != null)
-                                _sliderAdditionBalance.Balance = soundElement.Balance * BalanceFactor;
-                            if (_sliderSlideBalance != null)
-                                _sliderSlideBalance.Balance = soundElement.Balance * BalanceFactor;
+                            _loopProviders.ChangeAllBalances(soundElement.Balance * _mixSettings.BalanceFactor);
                             break;
                         case SlideControlType.ChangeVolume:
-                            if (_sliderAdditionVolume != null) _sliderAdditionVolume.Volume = soundElement.Volume;
-                            if (_sliderSlideVolume != null) _sliderSlideVolume.Volume = soundElement.Volume;
+                            _loopProviders.ChangeAllVolumes(soundElement.Volume);
                             break;
                     }
                 }
@@ -418,5 +393,22 @@ namespace Milki.Extensions.Audio.Subchannels
             //await base.DisposeAsync().ConfigureAwait(false);
             //Logger.Debug($"Disposing: Disposed base.");
         }
+    }
+
+    public class MixSettings
+    {
+        public float BalanceFactor { get; set; } = 0.35f;
+        public bool EnableVolume { get; set; } = true;
+
+        public int ForceStopFadeoutDuration { get; set; } = 400;
+        ///// <summary>
+        ///// negative: unlimited
+        ///// </summary>
+        //public int AllowLoopChannelCount { get; set; } = -1;
+
+        /// <summary>
+        /// 如果上个相同ID的循环轨未播放完成，则清除所有轨
+        /// </summary>
+        public bool ForceMode { get; set; } = false;
     }
 }

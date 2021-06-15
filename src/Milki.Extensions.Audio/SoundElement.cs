@@ -22,6 +22,7 @@ namespace Milki.Extensions.Audio
         public float Volume { get; private set; }
         public float Balance { get; private set; }
         public HitsoundType HitsoundType { get; private set; }
+        public int? LoopChannel { get; private set; }
         public SlideControlType ControlType { get; private set; } = SlideControlType.None;
 
         public bool HasSound => FilePath != null;
@@ -40,7 +41,8 @@ namespace Milki.Extensions.Audio
             return cachedSound.Duration.TotalMilliseconds + Offset;
         }
 
-        public static SoundElement Create(double offset, float volume, float balance, string filePath, double? forceStopOffset = null)
+        public static SoundElement Create(double offset, float volume, float balance, string filePath,
+            double? forceStopOffset = null)
         {
             var se = new SoundElement
             {
@@ -62,8 +64,8 @@ namespace Milki.Extensions.Audio
             return se;
         }
 
-        public static SoundElement CreateSlideSignal(double offset, float volume, float balance,
-            string filePath, HitsoundType slideTypeStore)
+        public static SoundElement CreateLoopSignal(double offset, float volume, float balance,
+            string filePath, int loopChannel)
         {
             return new SoundElement
             {
@@ -72,11 +74,12 @@ namespace Milki.Extensions.Audio
                 Balance = balance,
                 FilePath = filePath,
                 ControlType = SlideControlType.StartNew,
-                HitsoundType = slideTypeStore
+                HitsoundType = HitsoundType.Loop,
+                LoopChannel = loopChannel
             };
         }
 
-        public static SoundElement CreateStopSignal(double offset)
+        public static SoundElement CreateLoopStopSignal(double offset)
         {
             return new SoundElement
             {
@@ -85,7 +88,7 @@ namespace Milki.Extensions.Audio
             };
         }
 
-        public static SoundElement CreateVolumeSignal(double offset, float volume)
+        public static SoundElement CreateLoopVolumeSignal(double offset, float volume)
         {
             return new SoundElement
             {
@@ -95,7 +98,7 @@ namespace Milki.Extensions.Audio
             };
         }
 
-        public static SoundElement CreateBalanceSignal(double offset, float balance)
+        public static SoundElement CreateLoopBalanceSignal(double offset, float balance)
         {
             return new SoundElement
             {
@@ -125,7 +128,6 @@ namespace Milki.Extensions.Audio
     public enum HitsoundType
     {
         Normal,
-        Loop,
-        Loop1
+        Loop
     }
 }
