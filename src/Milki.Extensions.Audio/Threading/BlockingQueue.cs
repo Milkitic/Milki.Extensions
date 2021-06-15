@@ -10,7 +10,7 @@ namespace Milki.Extensions.Audio.Threading
         private readonly Queue<T> _queue = new Queue<T>();
         // create a semaphore that contains the items in the queue as resources.
         // initialize the semaphore to zero available resources (empty queue).
-        private Semaphore _semaphore = new Semaphore(0, int.MaxValue);
+        private readonly Semaphore _semaphore = new Semaphore(0, int.MaxValue);
         // a event that gets triggered when the reader thread is exiting
         private readonly ManualResetEvent _killThread = new ManualResetEvent(false);
         // wait handles that are used to unblock a Dequeue operation.
@@ -20,7 +20,7 @@ namespace Milki.Extensions.Audio.Threading
 
         public BlockingQueue()
         {
-            _waitHandles = new WaitHandle[2] { _semaphore, _killThread };
+            _waitHandles = new WaitHandle[] { _semaphore, _killThread };
         }
 
         public void Enqueue(T data)
@@ -32,7 +32,7 @@ namespace Milki.Extensions.Audio.Threading
             _semaphore.Release();
         }
 
-        public T Dequeue()
+        public T? Dequeue()
         {
             // wait until there is an item in the queue
             WaitHandle.WaitAny(_waitHandles);
@@ -53,12 +53,8 @@ namespace Milki.Extensions.Audio.Threading
 
         void IDisposable.Dispose()
         {
-            if (_semaphore != null)
-            {
-                _semaphore.Close();
-                _queue.Clear();
-                _semaphore = null;
-            }
+            _semaphore.Close();
+            _queue.Clear();
         }
     }
 }

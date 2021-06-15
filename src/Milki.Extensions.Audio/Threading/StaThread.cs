@@ -43,9 +43,8 @@ namespace Milki.Extensions.Audio.Threading
                     break;
                 }
 
-                SendOrPostCallbackItem workItem = _queueConsumer.Dequeue();
-                if (workItem != null)
-                    workItem.Execute();
+                var workItem = _queueConsumer.Dequeue();
+                workItem?.Execute();
             }
         }
 

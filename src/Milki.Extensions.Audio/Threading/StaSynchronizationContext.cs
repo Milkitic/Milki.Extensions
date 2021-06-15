@@ -9,7 +9,7 @@ namespace Milki.Extensions.Audio.Threading
         private readonly StaThread _staThread;
         private readonly SynchronizationContext _oldSync;
 
-        public StaSynchronizationContext(string name = null) : base()
+        public StaSynchronizationContext(string? name = null)
         {
             _queue = new BlockingQueue<SendOrPostCallbackItem>();
             _staThread = new StaThread(_queue, this, name);
@@ -30,7 +30,7 @@ namespace Milki.Extensions.Audio.Threading
             // if there was an exception, throw it on the caller thread, not the
             // sta thread.
             if (item.ExecutedWithException)
-                throw item.Exception;
+                throw item.Exception!;
         }
 
         public override void Post(SendOrPostCallback d, object state)

@@ -18,7 +18,7 @@ namespace Milki.Extensions.Audio.Threading
             _exeType = type;
         }
 
-        internal Exception Exception { get; private set; } = null;
+        internal Exception? Exception { get; private set; } = null;
 
         internal bool ExecutedWithException => Exception != null;
 

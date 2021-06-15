@@ -2,9 +2,9 @@
 
 namespace Milki.Extensions.Audio.Threading
 {
-    internal interface IQueueReader<T> : IDisposable
+    internal interface IQueueReader<out T> : IDisposable
     {
-        T Dequeue();
+        T? Dequeue();
         void ReleaseReader();
     }
 }
