@@ -14,7 +14,7 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions
     {
         public delegate void PlaybackTimingChangedEvent(AudioPlaybackEngine sender, TimeSpan oldTimestamp, TimeSpan newTimestamp);
 
-        private readonly IWavePlayer? _outputDevice;
+        public IWavePlayer? OutputDevice { get; }
         public event PlaybackTimingChangedEvent? Updated;
 
         public SynchronizationContext Context { get; set; }
@@ -61,9 +61,9 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions
             {
                 Context.Send(_ => Updated?.Invoke(this, a, b), null);
             };
-            _outputDevice = DeviceCreationHelper.CreateDevice(out var actualDeviceInfo, deviceInfo, Context);
-            Context.Send(_ => _outputDevice.Init(_timingProvider), null);
-            _outputDevice.Play();
+            OutputDevice = DeviceCreationHelper.CreateDevice(out var actualDeviceInfo, deviceInfo, Context);
+            Context.Send(_ => OutputDevice.Init(_timingProvider), null);
+            OutputDevice.Play();
         }
 
         public void AddRootSample(ISampleProvider input)
@@ -88,8 +88,8 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions
 
         public void Dispose()
         {
-            if (_outputDevice != null)
-                Context.Send(_ => _outputDevice.Dispose(), null);
+            if (OutputDevice != null)
+                Context.Send(_ => OutputDevice.Dispose(), null);
             if (Context is IDisposable id)
                 id.Dispose();
         }
