@@ -35,7 +35,7 @@ namespace Milki.Extensions.Audio.Subchannels
         private readonly object _skipLock = new object();
 
         private readonly LoopProviders _loopProviders = new LoopProviders();
-        
+
         private float _playbackRate;
         private readonly MixSettings _mixSettings;
 
@@ -385,6 +385,8 @@ namespace Milki.Extensions.Audio.Subchannels
         {
             await Stop().ConfigureAwait(false);
             Logger?.LogDebug($"Disposing: Stopped.");
+
+            _loopProviders.RemoveAll(Submixer);
 
             _cts?.Dispose();
             Logger?.LogDebug($"Disposing: Disposed {nameof(_cts)}.");

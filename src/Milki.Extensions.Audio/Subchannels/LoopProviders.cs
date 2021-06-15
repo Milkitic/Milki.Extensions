@@ -11,7 +11,7 @@ namespace Milki.Extensions.Audio.Subchannels
 {
     internal class LoopProviders
     {
-        private Dictionary<int, LoopProvider> _dictionary = new Dictionary<int, LoopProvider>();
+        private readonly Dictionary<int, LoopProvider> _dictionary = new Dictionary<int, LoopProvider>();
 
         public bool ShouldRemoveAll(int channel)
         {
