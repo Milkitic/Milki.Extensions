@@ -1,9 +1,9 @@
-﻿using Milki.Extensions.Audio.NAudioExtensions.SoundTouch;
-using NAudio.Wave;
-using System;
+﻿using System;
 using Microsoft.Extensions.Logging;
+using Milki.Extensions.MixPlayer.NAudioExtensions.SoundTouch;
+using NAudio.Wave;
 
-namespace Milki.Extensions.Audio.NAudioExtensions.Wave
+namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave
 {
     internal class VariableSpeedSampleProvider : ISampleProvider, IDisposable
     {

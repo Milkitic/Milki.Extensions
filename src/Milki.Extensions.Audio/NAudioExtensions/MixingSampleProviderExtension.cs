@@ -1,9 +1,9 @@
-﻿using Milki.Extensions.Audio.NAudioExtensions.Wave;
+﻿using System.Threading.Tasks;
+using Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
-using System.Threading.Tasks;
 
-namespace Milki.Extensions.Audio.NAudioExtensions
+namespace Milki.Extensions.MixPlayer.NAudioExtensions
 {
     internal static class MixingSampleProviderExtension
     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using NAudio.CoreAudioApi;
 
-namespace Milki.Extensions.Audio.Devices
+namespace Milki.Extensions.MixPlayer.Devices
 {
     public class DeviceInfo
     {

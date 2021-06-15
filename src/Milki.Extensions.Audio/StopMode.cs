@@ -1,4 +1,4 @@
-﻿namespace Milki.Extensions.Audio
+﻿namespace Milki.Extensions.MixPlayer
 {
     public enum StopMode
     {

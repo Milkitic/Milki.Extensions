@@ -1,15 +1,15 @@
-﻿using Microsoft.Extensions.Logging;
-using NAudio.Wave;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Milki.Extensions.Audio.Utilities;
+using Microsoft.Extensions.Logging;
+using Milki.Extensions.MixPlayer.Utilities;
+using NAudio.Wave;
 
-namespace Milki.Extensions.Audio.NAudioExtensions.Wave
+namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave
 {
     public class CachedSound
     {

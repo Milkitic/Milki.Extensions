@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Milki.Extensions.Audio.Utilities
+namespace Milki.Extensions.MixPlayer.Utilities
 {
     public static class MathUtils
     {

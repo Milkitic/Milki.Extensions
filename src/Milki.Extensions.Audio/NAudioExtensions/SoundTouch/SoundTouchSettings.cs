@@ -1,4 +1,4 @@
-﻿namespace Milki.Extensions.Audio.NAudioExtensions.SoundTouch
+﻿namespace Milki.Extensions.MixPlayer.NAudioExtensions.SoundTouch
 {
     internal enum SoundTouchSettings
     {

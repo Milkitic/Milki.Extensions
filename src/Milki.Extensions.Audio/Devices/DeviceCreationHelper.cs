@@ -1,13 +1,13 @@
-﻿using Microsoft.Extensions.Logging;
-using NAudio.CoreAudioApi;
-using NAudio.CoreAudioApi.Interfaces;
-using NAudio.Wave;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Microsoft.Extensions.Logging;
+using NAudio.CoreAudioApi;
+using NAudio.CoreAudioApi.Interfaces;
+using NAudio.Wave;
 
-namespace Milki.Extensions.Audio.Devices
+namespace Milki.Extensions.MixPlayer.Devices
 {
     public static class DeviceCreationHelper
     {

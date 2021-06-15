@@ -1,7 +1,7 @@
 ﻿using System;
 using NAudio.Wave;
 
-namespace Milki.Extensions.Audio.NAudioExtensions.Wave
+namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave
 {
     public class BalanceSampleProvider : ISampleProvider
     {

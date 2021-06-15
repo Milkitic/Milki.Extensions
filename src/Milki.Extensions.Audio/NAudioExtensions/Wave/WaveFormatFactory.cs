@@ -1,10 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
-using NAudio.Wave;
-using System;
+﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using NAudio.Wave;
 
-namespace Milki.Extensions.Audio.NAudioExtensions.Wave
+namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave
 {
     /// <summary>
     /// Audio file to wave stream

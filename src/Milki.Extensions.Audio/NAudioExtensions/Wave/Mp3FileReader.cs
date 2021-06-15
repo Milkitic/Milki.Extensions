@@ -1,7 +1,7 @@
-﻿using NAudio.Wave;
-using System.IO;
+﻿using System.IO;
+using NAudio.Wave;
 
-namespace Milki.Extensions.Audio.NAudioExtensions.Wave
+namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave
 {
     /// <summary>
     /// Class for reading from MP3 files

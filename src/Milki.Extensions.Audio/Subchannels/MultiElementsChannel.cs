@@ -1,19 +1,17 @@
-﻿using Milki.Extensions.Audio.NAudioExtensions;
-using Milki.Extensions.Audio.NAudioExtensions.Wave;
-using Milki.Extensions.Audio.Utilities;
-using NAudio.Wave;
-using NAudio.Wave.SampleProviders;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Milki.Extensions.MixPlayer.NAudioExtensions;
+using Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
+using Milki.Extensions.MixPlayer.Utilities;
+using NAudio.Wave.SampleProviders;
 
-namespace Milki.Extensions.Audio.Subchannels
+namespace Milki.Extensions.MixPlayer.Subchannels
 {
     public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
     {

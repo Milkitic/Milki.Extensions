@@ -1,4 +1,4 @@
-﻿namespace Milki.Extensions.Audio.Devices
+﻿namespace Milki.Extensions.MixPlayer.Devices
 {
     public enum Providers
     {

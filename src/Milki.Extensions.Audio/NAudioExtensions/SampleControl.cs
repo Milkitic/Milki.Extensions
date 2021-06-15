@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Milki.Extensions.Audio.NAudioExtensions
+namespace Milki.Extensions.MixPlayer.NAudioExtensions
 {
     public class SampleControl
     {

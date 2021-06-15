@@ -1,9 +1,4 @@
-﻿using System.IO;
-using System.Net.Mime;
-using System.Reflection;
-using Microsoft.Extensions.Logging;
-
-namespace Milki.Extensions.Audio.Utilities
+﻿namespace Milki.Extensions.MixPlayer.Utilities
 {
     public static class SharedUtils
     {

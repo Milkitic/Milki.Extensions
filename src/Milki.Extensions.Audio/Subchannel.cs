@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Milki.Extensions.Audio.NAudioExtensions;
+using Milki.Extensions.MixPlayer.NAudioExtensions;
 
-namespace Milki.Extensions.Audio
+namespace Milki.Extensions.MixPlayer
 {
     public abstract class Subchannel : IChannel
     {

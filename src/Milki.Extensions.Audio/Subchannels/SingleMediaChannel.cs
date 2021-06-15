@@ -1,16 +1,16 @@
-using Microsoft.Extensions.Logging;
-using Milki.Extensions.Audio.NAudioExtensions;
-using Milki.Extensions.Audio.NAudioExtensions.SoundTouch;
-using Milki.Extensions.Audio.NAudioExtensions.Wave;
-using Milki.Extensions.Audio.Utilities;
-using NAudio.Wave;
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Milki.Extensions.MixPlayer.NAudioExtensions;
+using Milki.Extensions.MixPlayer.NAudioExtensions.SoundTouch;
+using Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
+using Milki.Extensions.MixPlayer.Utilities;
+using NAudio.Wave;
 
-namespace Milki.Extensions.Audio.Subchannels
+namespace Milki.Extensions.MixPlayer.Subchannels
 {
     public class SingleMediaChannel : Subchannel
     {

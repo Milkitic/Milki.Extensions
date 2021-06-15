@@ -1,6 +1,6 @@
 ﻿using System.Threading;
 
-namespace Milki.Extensions.Audio.Threading
+namespace Milki.Extensions.MixPlayer.Threading
 {
     internal class StaThread
     {

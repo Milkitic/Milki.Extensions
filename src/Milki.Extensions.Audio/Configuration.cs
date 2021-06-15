@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 using Microsoft.Extensions.Logging;
 
-namespace Milki.Extensions.Audio
+namespace Milki.Extensions.MixPlayer
 {
     public static class Configuration
     {

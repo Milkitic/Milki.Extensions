@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 
-namespace Milki.Extensions.Audio.Threading
+namespace Milki.Extensions.MixPlayer.Threading
 {
     public class StaSynchronizationContext : SynchronizationContext, IDisposable
     {

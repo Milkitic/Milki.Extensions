@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace Milki.Extensions.Audio.Utilities
+namespace Milki.Extensions.MixPlayer.Utilities
 {
     public class VariableStopwatch : Stopwatch
     {

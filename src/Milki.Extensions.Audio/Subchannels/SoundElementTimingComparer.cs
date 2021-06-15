@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Milki.Extensions.Audio.Subchannels
+namespace Milki.Extensions.MixPlayer.Subchannels
 {
     public class SoundElementTimingComparer : IComparer<SoundElement>
     {

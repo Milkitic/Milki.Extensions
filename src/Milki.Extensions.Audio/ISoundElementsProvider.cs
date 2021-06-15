@@ -1,8 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using Milki.Extensions.Audio.Subchannels;
 
-namespace Milki.Extensions.Audio
+namespace Milki.Extensions.MixPlayer
 {
     public interface ISoundElementsProvider
     {

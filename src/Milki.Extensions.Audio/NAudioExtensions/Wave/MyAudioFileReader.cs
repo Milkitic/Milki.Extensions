@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using NAudio.Vorbis;
 using NAudio.Wave;
 
-namespace Milki.Extensions.Audio.NAudioExtensions.Wave
+namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave
 {
     /// <summary>
     /// AudioFileReader simplifies opening an audio file in NAudio

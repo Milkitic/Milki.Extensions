@@ -1,6 +1,6 @@
 ﻿using NAudio.Wave;
 
-namespace Milki.Extensions.Audio.NAudioExtensions.Wave
+namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave
 {
     /// <summary>
     /// Stream for looping playback

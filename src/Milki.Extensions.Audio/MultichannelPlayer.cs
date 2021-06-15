@@ -6,14 +6,13 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Milki.Extensions.Audio.Devices;
-using Milki.Extensions.Audio.NAudioExtensions;
-using Milki.Extensions.Audio.NAudioExtensions.Wave;
-using Milki.Extensions.Audio.Subchannels;
-using Milki.Extensions.Audio.Utilities;
-using NAudio.Wave;
+using Milki.Extensions.MixPlayer.Devices;
+using Milki.Extensions.MixPlayer.NAudioExtensions;
+using Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
+using Milki.Extensions.MixPlayer.Subchannels;
+using Milki.Extensions.MixPlayer.Utilities;
 
-namespace Milki.Extensions.Audio
+namespace Milki.Extensions.MixPlayer
 {
     public abstract class MultichannelPlayer : IChannel
     {

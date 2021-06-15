@@ -1,10 +1,9 @@
-﻿using System;
-using System.Threading.Tasks;
-using Milki.Extensions.Audio.NAudioExtensions.Wave;
-using Milki.Extensions.Audio.Subchannels;
+﻿using System.Threading.Tasks;
+using Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
+using Milki.Extensions.MixPlayer.Subchannels;
 using NAudio.Wave;
 
-namespace Milki.Extensions.Audio
+namespace Milki.Extensions.MixPlayer
 {
     public sealed class SoundElement
     {

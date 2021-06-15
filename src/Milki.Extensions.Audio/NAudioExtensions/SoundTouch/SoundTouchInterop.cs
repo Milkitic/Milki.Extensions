@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Milki.Extensions.Audio.NAudioExtensions.SoundTouch
+namespace Milki.Extensions.MixPlayer.NAudioExtensions.SoundTouch
 {
     internal static class SoundTouchInterop
     {

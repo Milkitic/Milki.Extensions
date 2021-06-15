@@ -1,4 +1,4 @@
-﻿namespace Milki.Extensions.Audio.Subchannels
+﻿namespace Milki.Extensions.MixPlayer.Subchannels
 {
     public enum SlideControlType
     {

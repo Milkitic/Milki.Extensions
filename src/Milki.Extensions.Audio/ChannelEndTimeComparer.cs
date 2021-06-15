@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Milki.Extensions.Audio
+namespace Milki.Extensions.MixPlayer
 {
     internal class ChannelEndTimeComparer : IComparer<Subchannel>
     {

@@ -1,14 +1,14 @@
-﻿using Milki.Extensions.Audio.NAudioExtensions.Wave;
-using NAudio.Wave;
-using NAudio.Wave.SampleProviders;
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Milki.Extensions.Audio.Devices;
-using Milki.Extensions.Audio.Threading;
+using Milki.Extensions.MixPlayer.Devices;
+using Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
+using Milki.Extensions.MixPlayer.Threading;
+using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
 
-namespace Milki.Extensions.Audio.NAudioExtensions
+namespace Milki.Extensions.MixPlayer.NAudioExtensions
 {
     public sealed class AudioPlaybackEngine : IDisposable
     {

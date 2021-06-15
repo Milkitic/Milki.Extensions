@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace Milki.Extensions.Audio.NAudioExtensions.SoundTouch
+namespace Milki.Extensions.MixPlayer.NAudioExtensions.SoundTouch
 {
     internal class SoundTouch : IDisposable
     {

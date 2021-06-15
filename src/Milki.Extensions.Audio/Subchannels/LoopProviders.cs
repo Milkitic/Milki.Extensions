@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Milki.Extensions.Audio.NAudioExtensions.Wave;
+using Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
-namespace Milki.Extensions.Audio.Subchannels
+namespace Milki.Extensions.MixPlayer.Subchannels
 {
     internal class LoopProviders
     {
