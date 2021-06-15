@@ -12,8 +12,10 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions
 {
     public sealed class AudioPlaybackEngine : IDisposable
     {
+        public delegate void PlaybackTimingChangedEvent(AudioPlaybackEngine sender, TimeSpan oldTimestamp, TimeSpan newTimestamp);
+
         private readonly IWavePlayer? _outputDevice;
-        public event Action<AudioPlaybackEngine, TimeSpan, TimeSpan>? Updated;
+        public event PlaybackTimingChangedEvent? Updated;
 
         public SynchronizationContext Context { get; set; }
 

@@ -94,6 +94,8 @@ namespace Milki.Extensions.MixPlayer.Subchannels
                 Engine.AddRootSample(_volumeProvider);
             }
 
+            await Stop();
+
             SampleControl.Volume = 1;
             SampleControl.Balance = 0;
             SampleControl.VolumeChanged = f =>
@@ -161,7 +163,8 @@ namespace Milki.Extensions.MixPlayer.Subchannels
 
         public override async Task Stop()
         {
-            if (PlayStatus == PlayStatus.Paused && Position == TimeSpan.Zero) return;
+            if (PlayStatus is PlayStatus.Paused or PlayStatus.Ready or PlayStatus.Unknown && 
+                Position == TimeSpan.Zero) return;
 
             await CancelLoopAsync().ConfigureAwait(false);
             await SkipTo(TimeSpan.Zero).ConfigureAwait(false);
@@ -244,7 +247,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
                         // wow nothing here
                     }
 
-                    await TakeElements((int)_sw.ElapsedMilliseconds);
+                    await SelectElements((int)_sw.ElapsedMilliseconds);
 
                     if (!TaskEx.TaskSleep(1, _cts)) break;
                 }
@@ -258,7 +261,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
             _playingTask.Start();
         }
 
-        public async Task TakeElements(int offset)
+        public async Task SelectElements(int offset)
         {
             while (_soundElementsQueue!.TryPeek(out var soundElement) &&
                    soundElement.Offset <= offset &&

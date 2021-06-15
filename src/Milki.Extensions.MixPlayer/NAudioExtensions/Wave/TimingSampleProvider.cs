@@ -5,10 +5,12 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave
 {
     public class TimingSampleProvider : ISampleProvider
     {
+        public delegate void TimingChangedEvent(TimeSpan oldTimestamp, TimeSpan newTimestamp);
+
         private ISampleProvider _sourceProvider;
         public TimeSpan CurrentTime { get; private set; } = TimeSpan.Zero;
 
-        public event Action<TimeSpan, TimeSpan>? Updated;
+        public event TimingChangedEvent? Updated;
 
         public TimingSampleProvider(ISampleProvider sourceProvider)
         {
