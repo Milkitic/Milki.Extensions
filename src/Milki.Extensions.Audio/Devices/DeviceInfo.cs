@@ -25,6 +25,8 @@ namespace Milki.Extensions.Audio.Devices
 
         public string? Id { get; set; }
         public string? Name { get; set; }
+        public int Latency { get; set; } = 0;
+        public WasapiConfig? WasapiConfig { get; set; }
         public Providers Provider { get; set; }
         public MMDevice? MMDevice { get; set; }
 
@@ -32,7 +34,8 @@ namespace Milki.Extensions.Audio.Devices
 
         public static DeviceInfo DefaultDirectSound { get; set; } = new DeviceInfo(Providers.DirectSound);
 
-        public static DeviceInfo DefaultWasapi { get; set; } = new DeviceInfo(Providers.Wasapi);
+        public static DeviceInfo DefaultWasapi { get; set; } = new DeviceInfo(Providers.Wasapi)
+        { WasapiConfig = new WasapiConfig { IsExclusiveMode = false } };
 
         public static DeviceInfo DefaultAsio { get; set; } = new DeviceInfo(Providers.Asio);
 
@@ -66,5 +69,10 @@ namespace Milki.Extensions.Audio.Devices
                     return HashCode.Combine(Id, (int)Provider);
             }
         }
+    }
+
+    public class WasapiConfig
+    {
+        public bool IsExclusiveMode { get; set; }
     }
 }

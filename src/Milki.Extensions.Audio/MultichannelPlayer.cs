@@ -2,12 +2,14 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Milki.Extensions.Audio.Devices;
 using Milki.Extensions.Audio.NAudioExtensions;
 using Milki.Extensions.Audio.NAudioExtensions.Wave;
+using Milki.Extensions.Audio.Subchannels;
 using Milki.Extensions.Audio.Utilities;
 using NAudio.Wave;
 
@@ -15,8 +17,8 @@ namespace Milki.Extensions.Audio
 {
     public abstract class MultichannelPlayer : IChannel
     {
-        public event Action<PlayStatus> PlayStatusChanged;
-        public event Action<TimeSpan> PositionUpdated;
+        public event Action<PlayStatus>? PlayStatusChanged;
+        public event Action<TimeSpan>? PositionUpdated;
 
         public virtual string Description { get; } = "Player";
 
@@ -38,7 +40,7 @@ namespace Milki.Extensions.Audio
             {
                 if (value == _playStatus) return;
                 _playStatus = value;
-                Execute.OnUiThread(() => PlayStatusChanged?.Invoke(value));
+                Engine.DeviceSynchronizationContext.Send(_ => PlayStatusChanged?.Invoke(value), null);
             }
         }
 
@@ -57,10 +59,10 @@ namespace Milki.Extensions.Audio
         private readonly IWavePlayer _outputDevice;
 
         private readonly VariableStopwatch _innerTimelineSw = new VariableStopwatch();
-        private CancellationTokenSource _cts;
-        private Task _playTask;
+        private CancellationTokenSource? _cts;
+        private Task? _playTask;
 
-        private ConcurrentQueue<Subchannel> _channelsQueue;
+        private ConcurrentQueue<Subchannel>? _channelsQueue;
         private SortedSet<Subchannel> _runningChannels = new SortedSet<Subchannel>(new ChannelEndTimeComparer());
         private PlayStatus _playStatus;
 
@@ -68,9 +70,9 @@ namespace Milki.Extensions.Audio
         private DateTime _lastPositionUpdateTime;
         public TimeSpan AutoRefreshInterval { get; protected set; } = TimeSpan.FromMilliseconds(500);
 
-        public MultichannelPlayer()
+        public MultichannelPlayer(DeviceInfo deviceInfo)
         {
-            _outputDevice = DeviceProviderExtension.CreateOrGetDefaultDevice(out var actualDeviceInfo);
+            _outputDevice = DeviceCreationHelper.CreateDevice(out var actualDeviceInfo, deviceInfo);
 
             //try
             //{
@@ -122,11 +124,14 @@ namespace Milki.Extensions.Audio
         public virtual async Task Initialize()
         {
             bool addition = false;
-            var max = MathEx.Max(Subchannels.Select(k =>
-            {
-                if (k.Duration <= TimeSpan.FromMilliseconds(100) && k is SingleMediaChannel) addition = true;
-                return k?.ChannelEndTime ?? TimeSpan.Zero;
-            }));
+            var endTimes = Subchannels
+                .Where(k => k != null)
+                .Select(k =>
+                {
+                    if (k.Duration <= TimeSpan.FromMilliseconds(100) && k is SingleMediaChannel) addition = true;
+                    return k.ChannelEndTime;
+                });
+            var max = MathUtils.Max(endTimes);
 
             Duration = addition ? max + TimeSpan.FromSeconds(1) : max;
             PlayStatus = PlayStatus.Ready;
@@ -170,7 +175,7 @@ namespace Milki.Extensions.Audio
                                 //RemoveSubchannel(runningChannel);
                             }
 
-                            await BufferSoundElements();
+                            await BufferSoundElementsAsync();
 
                             foreach (var runningChannel in _runningChannels)
                             {
@@ -187,21 +192,21 @@ namespace Milki.Extensions.Audio
 
                     if (_innerTimelineSw.Elapsed - lastBuffPos >= TimeSpan.FromSeconds(1.5))
                     {
-                        BufferSoundElements();
+                        _ = BufferSoundElementsAsync(); // no await
                         lastBuffPos = _innerTimelineSw.Elapsed;
                     }
 
-                    if (_channelsQueue.Count > 0 &&
+                    if (_channelsQueue!.Count > 0 &&
                         _channelsQueue.TryPeek(out var channel) &&
                         channel.ChannelStartTime <= _innerTimelineSw.Elapsed &&
                         _channelsQueue.TryDequeue(out channel))
                     {
                         _runningChannels.Add(channel);
                         await channel.Play().ConfigureAwait(false);
-                        Logger.Debug("[{0}] Play: {1}", _innerTimelineSw.Elapsed, channel.Description);
+                        Logger?.LogDebug("[{0}] Play: {1}", _innerTimelineSw.Elapsed, channel.Description);
 
                         if (_channelsQueue.Count == 0)
-                            Logger.Debug("[{0}] All channels are playing.", _innerTimelineSw.Elapsed);
+                            Logger?.LogDebug("[{0}] All channels are playing.", _innerTimelineSw.Elapsed);
                     }
 
                     if (Position > Duration)
@@ -274,9 +279,9 @@ namespace Milki.Extensions.Audio
 
             foreach (var channel in _runningChannels.ToList())
             {
-                Logger.Debug("Will stop: {0}.", channel.Description);
+                Logger?.LogDebug("Will stop: {0}.", channel.Description);
                 await channel.Stop().ConfigureAwait(false);
-                Logger.Debug("{0} stopped.", channel.Description);
+                Logger?.LogDebug("{0} stopped.", channel.Description);
             }
 
             SetTime(TimeSpan.Zero);
@@ -328,7 +333,7 @@ namespace Milki.Extensions.Audio
             foreach (var subchannel in _subchannels.ToList())
             {
                 await subchannel.DisposeAsync().ConfigureAwait(false);
-                Logger.Debug("Disposing: Disposed {0}.", subchannel.Description);
+                Logger?.LogDebug("Disposing: Disposed {0}.", subchannel.Description);
             }
 
             _subchannels.Clear();
@@ -337,16 +342,17 @@ namespace Milki.Extensions.Audio
 
         public virtual async ValueTask DisposeAsync()
         {
-            Logger.Debug($"Disposing: Start to dispose.");
+            Logger?.LogDebug($"Disposing: Start to dispose.");
             await DisposeSubChannelsAsync();
 
-            Engine?.Dispose();
-            Logger.Debug("Disposing: Disposed {0}.", nameof(Engine));
+            Engine.Dispose();
+
+            Logger?.LogDebug("Disposing: Disposed {0}.", nameof(Engine));
             _cts?.Dispose();
-            Logger.Debug("Disposing: Disposed {0}.", nameof(_cts));
+            Logger?.LogDebug("Disposing: Disposed {0}.", nameof(_cts));
             await TaskEx.WhenAllSkipNull(_playTask).ConfigureAwait(false);
             _playTask?.Dispose();
-            Logger.Debug("Disposing: Disposed {0}.", nameof(_playTask));
+            Logger?.LogDebug("Disposing: Disposed {0}.", nameof(_playTask));
         }
 
         protected void AddSubchannel(Subchannel channel)
@@ -476,7 +482,7 @@ namespace Milki.Extensions.Audio
             return true;
         }
 
-        protected async Task BufferSoundElements()
+        protected async Task BufferSoundElementsAsync()
         {
             var position = Position;
             foreach (var subchannel in Subchannels)
@@ -486,9 +492,9 @@ namespace Milki.Extensions.Audio
                     .Where(k => k.FilePath != null)
                     .Where(k => k.Offset >= position.TotalMilliseconds &&
                                 k.Offset <= position.TotalMilliseconds + 6000);
-                foreach (var soundElement in hitsounds)
+                foreach (var soundElement in hitsounds.Where(k => k.FilePath != null))
                 {
-                    await CachedSound.GetOrCreateCacheSound(soundElement.FilePath);
+                    await CachedSound.GetOrCreateCacheSound(soundElement.FilePath!);
                 }
             }
         }

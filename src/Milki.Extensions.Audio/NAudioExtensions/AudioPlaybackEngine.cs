@@ -17,6 +17,8 @@ namespace Milki.Extensions.Audio.NAudioExtensions
         private readonly TaskCompletionSource<object?>? _disposingTask;
         private readonly TaskCompletionSource<object?>? _completeTask;
 
+        public SynchronizationContext DeviceSynchronizationContext { get; private set; }
+
         private readonly VolumeSampleProvider _volumeProvider;
         private readonly TimingSampleProvider _timingProvider;
 
@@ -38,6 +40,7 @@ namespace Milki.Extensions.Audio.NAudioExtensions
             _volumeProvider = new VolumeSampleProvider(RootMixer);
             _timingProvider = new TimingSampleProvider(_volumeProvider);
             _timingProvider.Updated += (a, b) => Updated?.Invoke(this, a, b);
+            DeviceSynchronizationContext = SynchronizationContext.Current;
         }
 
         public AudioPlaybackEngine(IWavePlayer outputDevice)
@@ -55,11 +58,19 @@ namespace Milki.Extensions.Audio.NAudioExtensions
             _disposingTask = new TaskCompletionSource<object?>();
             _completeTask = new TaskCompletionSource<object?>();
 
-            var startThread = new Thread(DeviceInstanceControl) { IsBackground = true };
+            SynchronizationContext sc = SynchronizationContext.Current;
+            var startThread = new Thread(() =>
+            {
+                sc = SynchronizationContext.Current;
+                DeviceInstanceControl();
+            })
+            { IsBackground = true };
             startThread.SetApartmentState(ApartmentState.STA);
             startThread.Start();
 
             _creationTask.Task.Wait();
+
+            DeviceSynchronizationContext = sc;
             _outputDevice.Play();
         }
 

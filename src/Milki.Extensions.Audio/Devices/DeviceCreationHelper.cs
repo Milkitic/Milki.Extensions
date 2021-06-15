@@ -39,11 +39,7 @@ namespace Milki.Extensions.Audio.Devices
             }
         }
 
-        public static IWavePlayer CreateDevice(
-            out DeviceInfo actualDeviceInfo,
-            in DeviceInfo? deviceInfo = null,
-            int latency = 1,
-            bool isExclusive = true)
+        public static IWavePlayer CreateDevice(out DeviceInfo actualDeviceInfo, in DeviceInfo? deviceInfo = null)
         {
             if (deviceInfo is null) // use default profile
             {
@@ -67,7 +63,8 @@ namespace Milki.Extensions.Audio.Devices
                         safeLatency = 40;
                         device = actualDeviceInfo.Equals(DeviceInfo.DefaultDirectSound)
                             ? new DirectSoundOut(safeLatency)
-                            : new DirectSoundOut(Guid.Parse(actualDeviceInfo.Id!), Math.Max(latency, safeLatency));
+                            : new DirectSoundOut(Guid.Parse(actualDeviceInfo.Id!),
+                                Math.Max(actualDeviceInfo.Latency, safeLatency));
                         break;
                     case Providers.Wasapi:
                         safeLatency = 1;
@@ -78,8 +75,10 @@ namespace Milki.Extensions.Audio.Devices
                         else
                         {
                             device = new WasapiOut(actualDeviceInfo.MMDevice,
-                                isExclusive ? AudioClientShareMode.Exclusive : AudioClientShareMode.Shared, true,
-                                latency);
+                                actualDeviceInfo.WasapiConfig?.IsExclusiveMode == true
+                                    ? AudioClientShareMode.Exclusive
+                                    : AudioClientShareMode.Shared, true,
+                                actualDeviceInfo.Latency);
                         }
 
                         break;

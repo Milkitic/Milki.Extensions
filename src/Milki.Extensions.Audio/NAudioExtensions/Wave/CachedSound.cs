@@ -54,8 +54,9 @@ namespace Milki.Extensions.Audio.NAudioExtensions.Wave
             new ReadOnlyDictionary<string, CachedSound?>(CachedDictionary);
         public static IReadOnlyDictionary<string, CachedSound?> DefaultSounds { get; } =
             new ReadOnlyDictionary<string, CachedSound?>(DefaultDictionary);
-        public static bool ContainsHitsound(string path)
+        public static bool ContainsHitsound(string? path)
         {
+            if (path == null) return false;
             return CachedSounds.ContainsKey(path) || DefaultSounds.ContainsKey(path);
         }
 
@@ -86,6 +87,7 @@ namespace Milki.Extensions.Audio.NAudioExtensions.Wave
 
         public static async Task<CachedSound?> GetOrCreateCacheSound(string path)
         {
+            if (path == null) return null;
             if (DefaultDictionary.ContainsKey(path))
                 return DefaultDictionary[path];
 

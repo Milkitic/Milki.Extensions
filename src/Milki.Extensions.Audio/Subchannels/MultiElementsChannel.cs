@@ -106,7 +106,7 @@ namespace Milki.Extensions.Audio.Subchannels
                 : 0
             ));
 
-            Duration = MathEx.Max(
+            Duration = MathUtils.Max(
                 TimeSpan.FromMilliseconds(SoundElements.Count == 0 ? 0 : SoundElements.Max(k => k.Offset)), max);
 
             await Task.Run(() =>
