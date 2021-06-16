@@ -51,7 +51,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
         public int ManualOffset
         {
             get => -(int)_sw.ManualOffset.TotalMilliseconds;
-            internal set => _sw.ManualOffset = -TimeSpan.FromMilliseconds(value);
+            set => _sw.ManualOffset = -TimeSpan.FromMilliseconds(value);
         }
 
         public sealed override float PlaybackRate
@@ -59,6 +59,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
             get => _sw.Rate;
             protected set => _sw.Rate = value;
         }
+        public float BalanceFactor { get; set; } = 0.35f;
 
         public sealed override bool UseTempo { get; protected set; }
 
@@ -280,7 +281,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
                         case SlideControlType.None:
                             var cachedSound = await soundElement.GetCachedSoundAsync().ConfigureAwait(false);
                             var flag = Submixer!.PlaySound(cachedSound, soundElement.Volume,
-                                soundElement.Balance * _mixSettings.BalanceFactor);
+                                soundElement.Balance * BalanceFactor);
                             if (soundElement.SubSoundElement != null)
                                 soundElement.SubSoundElement.RelatedProvider = flag;
 
@@ -310,13 +311,13 @@ namespace Milki.Extensions.MixPlayer.Subchannels
                                 _loopProviders.RemoveAll(Submixer);
                             }
 
-                            await _loopProviders.CreateAsync(soundElement, Submixer, _mixSettings.BalanceFactor);
+                            await _loopProviders.CreateAsync(soundElement, Submixer, BalanceFactor);
                             break;
                         case SlideControlType.StopRunning:
                             _loopProviders.Remove(soundElement.LoopChannel, Submixer);
                             break;
                         case SlideControlType.ChangeBalance:
-                            _loopProviders.ChangeAllBalances(soundElement.Balance * _mixSettings.BalanceFactor);
+                            _loopProviders.ChangeAllBalances(soundElement.Balance * BalanceFactor);
                             break;
                         case SlideControlType.ChangeVolume:
                             _loopProviders.ChangeAllVolumes(soundElement.Volume);
@@ -401,7 +402,6 @@ namespace Milki.Extensions.MixPlayer.Subchannels
 
     public class MixSettings
     {
-        public float BalanceFactor { get; set; } = 0.35f;
         public bool EnableVolume { get; set; } = true;
 
         public int ForceStopFadeoutDuration { get; set; } = 400;
