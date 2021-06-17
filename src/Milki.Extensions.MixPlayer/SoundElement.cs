@@ -78,12 +78,13 @@ namespace Milki.Extensions.MixPlayer
             };
         }
 
-        public static SoundElement CreateLoopStopSignal(double offset)
+        public static SoundElement CreateLoopStopSignal(double offset, int loopChannel)
         {
             return new SoundElement
             {
                 Offset = offset,
-                ControlType = SlideControlType.StopRunning
+                ControlType = SlideControlType.StopRunning,
+                LoopChannel = loopChannel,
             };
         }
 

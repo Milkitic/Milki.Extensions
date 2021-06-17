@@ -312,7 +312,8 @@ namespace Milki.Extensions.MixPlayer.Subchannels
                                 _loopProviders.RemoveAll(Submixer);
                             }
 
-                            await _loopProviders.CreateAsync(soundElement, Submixer, BalanceFactor);
+                            await _loopProviders.CreateAsync(soundElement, Submixer, BalanceFactor)
+                                .ConfigureAwait(false);
                             break;
                         case SlideControlType.StopRunning:
                             _loopProviders.Remove(soundElement.LoopChannel, Submixer);
@@ -327,7 +328,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
                 }
                 catch (Exception ex)
                 {
-                    Logger?.LogError(ex, "Error while play target element. Source: {0}; ControlType",
+                    Logger?.LogError(ex, "Error while playing target element. Source: {0}; {1}",
                         soundElement.FilePath, soundElement.ControlType);
                 }
             }
