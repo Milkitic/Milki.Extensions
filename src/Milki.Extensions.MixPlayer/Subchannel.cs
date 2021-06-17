@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Milki.Extensions.MixPlayer.NAudioExtensions;
 
@@ -16,12 +17,14 @@ namespace Milki.Extensions.MixPlayer
         public TimeSpan AutoRefreshInterval { get; protected set; } = TimeSpan.FromMilliseconds(500);
 
         protected AudioPlaybackEngine Engine { get; }
+        public ICollection<Subchannel> ReferencedChannels { get; }
 
         public SampleControl SampleControl { get; } = new SampleControl();
 
-        public Subchannel(AudioPlaybackEngine engine)
+        public Subchannel(AudioPlaybackEngine engine, ICollection<Subchannel>? referencedChannels = null)
         {
             Engine = engine;
+            ReferencedChannels = referencedChannels ?? Array.Empty<Subchannel>();
         }
 
         public abstract TimeSpan ChannelStartTime { get; }

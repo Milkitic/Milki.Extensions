@@ -21,7 +21,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
         protected List<SoundElement>? SoundElements;
         public IReadOnlyCollection<SoundElement>? SoundElementCollection =>
             SoundElements == null ? null : new ReadOnlyCollection<SoundElement>(SoundElements);
-        protected readonly SingleMediaChannel? ReferenceChannel;
+        //protected readonly SingleMediaChannel? ReferenceChannel;
         private ConcurrentQueue<SoundElement>? _soundElementsQueue;
 
         private VolumeSampleProvider? _volumeProvider;
@@ -71,15 +71,16 @@ namespace Milki.Extensions.MixPlayer.Subchannels
         /// </summary>
         /// <param name="engine"></param>
         /// <param name="mixSettings"></param>
-        /// <param name="referenceChannel"></param>
+        /// <param name="referenceChannels"></param>
         public MultiElementsChannel(AudioPlaybackEngine engine,
             MixSettings? mixSettings = null,
-            SingleMediaChannel? referenceChannel = null) : base(engine)
+            //SingleMediaChannel? referenceChannel = null,
+            ICollection<Subchannel>? referencedChannels = null) : base(engine, referencedChannels)
         {
             mixSettings ??= new MixSettings();
             _mixSettings = mixSettings;
             if (!mixSettings.EnableVolume) Submixer = engine.RootMixer;
-            ReferenceChannel = referenceChannel;
+            //ReferenceChannel = referenceChannel;
         }
 
         public override async Task Initialize()

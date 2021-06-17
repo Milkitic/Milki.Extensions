@@ -15,13 +15,13 @@ namespace Milki.Extensions.MixPlayer
         private readonly ICollection<MultiElementsChannel> _channels;
         private readonly AudioPlaybackEngine _engine;
 
-        public Mp3Exporter(Func<MultiElementsChannel> channel) : this(new[] { channel })
+        public Mp3Exporter(MultiElementsChannel channel) : this(new[] { channel })
         {
         }
 
-        public Mp3Exporter(IEnumerable<Func<MultiElementsChannel>> channels)
+        public Mp3Exporter(IEnumerable<MultiElementsChannel> channels)
         {
-            _channels = channels.Select(k => k()).ToArray();
+            _channels = channels.ToArray();
             _engine = new AudioPlaybackEngine();
         }
 
@@ -41,7 +41,17 @@ namespace Milki.Extensions.MixPlayer
             _engine.Updated += (_, _, timestamp) =>
             {
                 foreach (var subchannel in _channels)
-                    subchannel.SelectElements((int)timestamp.TotalMilliseconds).Wait();
+                {
+                    try
+                    {
+                        subchannel.SelectElements((int)timestamp.TotalMilliseconds).Wait();
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                        throw;
+                    }
+                }
 
                 var progress = timestamp.TotalMilliseconds / maxEndTime.TotalMilliseconds;
                 if (!p.Equals(progress))
