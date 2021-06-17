@@ -7,13 +7,17 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions.SoundTouch
 {
     internal class SoundTouch : IDisposable
     {
-        private IntPtr _handle;
-        private string? _versionString;
-        public SoundTouch()
+        static SoundTouch()
         {
             var is64Bit = Environment.Is64BitProcess;
             var libDir = Path.Combine(Configuration.Instance.SoundTouchDir);
             AddEnvironmentPaths(libDir, is64Bit ? Path.Combine(libDir, "x64") : Path.Combine(libDir, "x86"));
+        }
+
+        private IntPtr _handle;
+        private string? _versionString;
+        public SoundTouch()
+        {
             _handle = SoundTouchInterop.soundtouch_createInstance();
         }
 

@@ -16,7 +16,11 @@ namespace Milki.Extensions.MixPlayer.Threading
         {
             _queueConsumer = reader;
             _syncContext = syncContext;
-            _staThread = new Thread(Run) { Name = name ?? "STA Worker Thread" };
+            _staThread = new Thread(Run)
+            {
+                Name = name ?? "STA Worker Thread",
+                IsBackground = true
+            };
             _staThread.SetApartmentState(ApartmentState.STA);
         }
 
@@ -44,7 +48,10 @@ namespace Milki.Extensions.MixPlayer.Threading
                 }
 
                 var workItem = _queueConsumer.Dequeue();
-                workItem?.Execute();
+                if (workItem != null)
+                {
+                    workItem.Execute();
+                }
             }
         }
 

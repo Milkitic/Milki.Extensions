@@ -7,15 +7,15 @@ namespace Milki.Extensions.MixPlayer.Threading
     {
         private readonly BlockingQueue<SendOrPostCallbackItem> _queue;
         private readonly StaThread _staThread;
-        private readonly SynchronizationContext _oldSync;
+        //private readonly SynchronizationContext _oldSync;
 
         public StaSynchronizationContext(string? name = null)
         {
             _queue = new BlockingQueue<SendOrPostCallbackItem>();
             _staThread = new StaThread(_queue, this, name);
             _staThread.Start();
-            _oldSync = SynchronizationContext.Current;
-            SynchronizationContext.SetSynchronizationContext(this);
+            //_oldSync = SynchronizationContext.Current;
+            //SynchronizationContext.SetSynchronizationContext(this);
         }
 
         public override void Send(SendOrPostCallback d, object state)
@@ -45,7 +45,7 @@ namespace Milki.Extensions.MixPlayer.Threading
         public void Dispose()
         {
             _staThread.Stop();
-            SynchronizationContext.SetSynchronizationContext(_oldSync);
+            //SynchronizationContext.SetSynchronizationContext(_oldSync);
         }
 
         public override SynchronizationContext CreateCopy()
