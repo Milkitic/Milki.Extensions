@@ -15,14 +15,14 @@ namespace Milki.Extensions.MixPlayer
         private readonly ICollection<MultiElementsChannel> _channels;
         private readonly AudioPlaybackEngine _engine;
 
-        public Mp3Exporter(MultiElementsChannel channel) : this(new[] { channel })
+        public Mp3Exporter(MultiElementsChannel channel, AudioPlaybackEngine engine) : this(new[] { channel }, engine)
         {
         }
 
-        public Mp3Exporter(IEnumerable<MultiElementsChannel> channels)
+        public Mp3Exporter(IEnumerable<MultiElementsChannel> channels, AudioPlaybackEngine engine)
         {
             _channels = channels.ToArray();
-            _engine = new AudioPlaybackEngine();
+            _engine = engine;
         }
 
         public async Task ExportAsync(string filepath, int bitRate,

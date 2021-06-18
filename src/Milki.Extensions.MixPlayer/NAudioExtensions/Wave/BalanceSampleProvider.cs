@@ -17,17 +17,24 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave
 
         public int Read(float[] buffer, int offset, int count)
         {
-            int samplesRead = _sourceProvider.Read(buffer, offset, count);
-            if (Channels != 1 && !Balance.Equals(0))
+            try
             {
-                for (int n = 0; n < count; n += 2)
+                int samplesRead = _sourceProvider.Read(buffer, offset, count);
+                if (Channels != 1 && !Balance.Equals(0))
                 {
-                    buffer[offset + n] *= (LeftVolume * 2); // left
-                    buffer[offset + n + 1] *= (RightVolume * 2); // right
+                    for (int n = 0; n < count; n += 2)
+                    {
+                        buffer[offset + n] *= (LeftVolume * 2); // left
+                        buffer[offset + n + 1] *= (RightVolume * 2); // right
+                    }
                 }
-            }
 
-            return samplesRead;
+                return samplesRead;
+            }
+            catch (Exception e)
+            {
+                return 0;
+            }
         }
 
         public float Balance

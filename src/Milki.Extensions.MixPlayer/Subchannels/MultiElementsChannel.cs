@@ -71,7 +71,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
         /// </summary>
         /// <param name="engine"></param>
         /// <param name="mixSettings"></param>
-        /// <param name="referenceChannels"></param>
+        /// <param name="referencedChannels"></param>
         public MultiElementsChannel(AudioPlaybackEngine engine,
             MixSettings? mixSettings = null,
             //SingleMediaChannel? referenceChannel = null,
@@ -342,7 +342,8 @@ namespace Milki.Extensions.MixPlayer.Subchannels
                 var elements = new List<SoundElement>(await GetSoundElements().ConfigureAwait(false));
                 var subElements = elements
                     .Where(k => k.SubSoundElement != null)
-                    .Select(k => k.SubSoundElement!);
+                    .Select(k => k.SubSoundElement!)
+                    .ToArray();
                 elements.AddRange(subElements);
                 SoundElements = elements;
                 Duration = TimeSpan.FromMilliseconds(SoundElements.Count == 0 ? 0 : SoundElements.Max(k => k.Offset));

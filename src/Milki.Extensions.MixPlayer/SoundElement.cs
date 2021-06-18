@@ -53,11 +53,7 @@ namespace Milki.Extensions.MixPlayer
 
             if (forceStopOffset != null)
             {
-                se.SubSoundElement = new SoundElement
-                {
-                    Offset = forceStopOffset.Value,
-                    ControlType = SlideControlType.StopNote
-                };
+                se.SubSoundElement = CreateStopNote(forceStopOffset.Value);
             }
 
             return se;
@@ -106,6 +102,17 @@ namespace Milki.Extensions.MixPlayer
                 Balance = balance,
                 ControlType = SlideControlType.ChangeBalance
             };
+        }
+
+        internal static SoundElement CreateStopNote(double offset)
+        {
+            var se = new SoundElement
+            {
+                Offset = offset,
+                ControlType = SlideControlType.StopNote
+            };
+
+            return se;
         }
 
         internal ISampleProvider? RelatedProvider { get; set; }
