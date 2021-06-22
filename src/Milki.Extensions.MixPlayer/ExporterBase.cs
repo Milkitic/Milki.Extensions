@@ -38,6 +38,7 @@ namespace Milki.Extensions.MixPlayer
             foreach (var subchannel in _channels)
             {
                 await subchannel.Initialize();
+                subchannel.Volume = 0.75f;
             }
 
             var maxEndTime = _channels.Count == 0 ? TimeSpan.Zero : _channels.Max(k => k.ChannelEndTime);
