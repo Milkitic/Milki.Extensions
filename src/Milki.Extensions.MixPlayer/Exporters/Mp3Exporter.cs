@@ -29,7 +29,7 @@ namespace Milki.Extensions.MixPlayer.Exporters
             Action<double>? progressCallback = null)
         {
             await using var outStream = new FileStream(filepath, FileMode.Create, FileAccess.Write);
-            await using var writer = new LameMP3FileWriter(outStream, WaveFormat, bitRate / 1000, id3);
+            await using Stream writer = new LameMP3FileWriter(outStream, WaveFormat, bitRate / 1000, id3);
             await ExportCoreAsync(async (bytes, offset, count) =>
             {
                 await writer.WriteAsync(bytes, offset, count);

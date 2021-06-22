@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using NAudio.FileFormats.Mp3;
 using NAudio.Wave;
 
 namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave
@@ -32,8 +33,8 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave
         /// <returns></returns>
         public static IMp3FrameDecompressor CreateAcmFrameDecompressor(WaveFormat mp3Format)
         {
-            // new DmoMp3FrameDecompressor(this.Mp3WaveFormat); 
-            return new AcmMp3FrameDecompressor(mp3Format);
+            return new DmoMp3FrameDecompressor(mp3Format);
+            //return new AcmMp3FrameDecompressor(mp3Format);
         }
     }
 }
