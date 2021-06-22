@@ -1,34 +1,40 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Milki.Extensions.MixPlayer.NAudioExtensions;
 using Milki.Extensions.MixPlayer.Subchannels;
-using NAudio.Lame;
 using NAudio.Wave;
 
 namespace Milki.Extensions.MixPlayer
 {
-    public class Mp3Exporter
+    public abstract class ExporterBase
     {
         private readonly ICollection<MultiElementsChannel> _channels;
         private readonly AudioPlaybackEngine _engine;
+        private readonly WaveFloatTo16Provider _sourceProvider;
+        protected WaveFormat WaveFormat { get; }
 
-        public Mp3Exporter(MultiElementsChannel channel, AudioPlaybackEngine engine) : this(new[] { channel }, engine)
+        public ExporterBase(MultiElementsChannel channel, AudioPlaybackEngine engine) : this(new[] { channel }, engine)
         {
         }
 
-        public Mp3Exporter(IEnumerable<MultiElementsChannel> channels, AudioPlaybackEngine engine)
+        public ExporterBase(IEnumerable<MultiElementsChannel> channels, AudioPlaybackEngine engine)
         {
             _channels = channels.ToArray();
             _engine = engine;
+
+            var sourceProvider = _engine.Root.ToWaveProvider();
+            _sourceProvider = new WaveFloatTo16Provider(sourceProvider);
+            WaveFormat = _sourceProvider.WaveFormat;
         }
 
-        public async Task ExportAsync(string filepath, int bitRate,
-            ID3TagData? id3 = null,
-            Action<double>? progressCallback = null)
+        public abstract Task ExportAsync(string filepath, Action<double>? progressCallback = null);
+
+        protected async Task ExportCoreAsync(Func<byte[], int, int, Task> dataProcessed, Action<double> progressCallback)
         {
+            if (dataProcessed == null) throw new ArgumentNullException(nameof(dataProcessed));
+
             foreach (var subchannel in _channels)
             {
                 await subchannel.Initialize();
@@ -69,23 +75,15 @@ namespace Milki.Extensions.MixPlayer
                 }
             };
 
-            var sourceProvider = _engine.Root.ToWaveProvider();
-            sourceProvider = new WaveFloatTo16Provider(sourceProvider);
-
-            await using var outStream = new FileStream(filepath, FileMode.Create, FileAccess.Write);
-            await using var writer = new LameMP3FileWriter(outStream, sourceProvider.WaveFormat, bitRate, id3);
-
             var buffer = new byte[128];
             while (true)
             {
-                int count = sourceProvider.Read(buffer, 0, buffer.Length);
+                int count = _sourceProvider.Read(buffer, 0, buffer.Length);
                 if (count != 0)
-                    await writer.WriteAsync(buffer, 0, count);
+                    await dataProcessed(buffer, 0, count);
                 else
                     break;
             }
-
-            outStream.Flush();
         }
     }
 }
