@@ -5,7 +5,7 @@
         <Authors>Milki</Authors>
         <PackageProjectUrl>https://github.com/Milkitic/Milki.Extensions.MixPlayer</PackageProjectUrl>
         <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageLicenseExpression>LGPL-2.1-only</PackageLicenseExpression>
         <Copyright>Copyright © Milki 2021</Copyright>
     </PropertyGroup>
 
