@@ -25,7 +25,12 @@ jobs:
     - name: dotnet Publish
       run: |
         echo ${{ github.ref }}      
-        dotnet publish src/Milki.Extensions.MixPlayer --no-self-contained --configuration Release --output ci-publish-Milki.Extensions.MixPlayer
+        dotnet pack src/Milki.Extensions.MixPlayer --configuration Release --output ci-pack-Milki.Extensions.MixPlayer
+      
+    - name: dotnet Build ILMerged
+      run: |
+        dotnet add src/Milki.Extensions.MixPlayer package Costura.Fody
+        dotnet build src/Milki.Extensions.MixPlayer --configuration Release --output ci-release-Milki.Extensions.MixPlayer
         
     - name: action-minver
       uses: thefringeninja/action-minver@2.0.0-preview1
@@ -37,8 +42,8 @@ jobs:
     - name: Pack via 7z
       if: ${{ success() && startsWith(github.ref, 'refs/tags/') }}
       run: |
-        mkdir -p ./ci-pack/
-        7z a "./ci-pack/Milki.Extensions.MixPlayer-v${{ steps.version.outputs.version }}.7z" "./ci-publish-Milki.Extensions.MixPlayer/*" -r
+        mkdir -p ./ci-7zpack/
+        7z a "./ci-7zpack/Milki.Extensions.MixPlayer-ILMerged.${{ steps.version.outputs.version }}.7z" "./ci-release-Milki.Extensions.MixPlayer/*" -r
       
     - name: Create a new GitHub release if a new tag is pushed
       uses: softprops/action-gh-release@v1
@@ -50,10 +55,12 @@ jobs:
         prerelease: true
         draft: false
         files: |
-          ./ci-pack/Milki.Extensions.MixPlayer-v${{ steps.version.outputs.version }}.7z
+          ./ci-pack-Milki.Extensions.MixPlayer/Milki.Extensions.MixPlayer.${{ steps.version.outputs.version }}.nupkg
+          ./ci-7zpack/Milki.Extensions.MixPlayer-ILMerged.${{ steps.version.outputs.version }}.7z
 
     - name: Nuget Publish Milki.Extensions.MixPlayer
       uses: brandedoutcast/publish-nuget@v2.5.2
+      if: ${{ success() }}
       with:
         PROJECT_FILE_PATH: src/Milki.Extensions.MixPlayer/Milki.Extensions.MixPlayer.csproj
         VERSION_STATIC: ${{ steps.version.outputs.version }}
