@@ -3,9 +3,14 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <Description>This library is for timelined sound effects playing.</Description>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
+    <!--<PackageReference Include="Costura.Fody" Version="5.4.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>-->
     <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
     <PackageReference Include="NAudio.Asio" Version="2.0.0" />
     <PackageReference Include="NAudio.Core" Version="2.0.0" />
