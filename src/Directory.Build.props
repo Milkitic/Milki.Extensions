@@ -1,0 +1,18 @@
+<Project>
+    <PropertyGroup>
+        <LangVersion>9.0</LangVersion>
+        <nullable>enable</nullable>
+        <Authors>Milki</Authors>
+        <PackageProjectUrl>https://github.com/Milkitic/Milki.Extensions.MixPlayer</PackageProjectUrl>
+        <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <Copyright>Copyright © Milki 2021</Copyright>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    </PropertyGroup>
+
+  <PropertyGroup Label="MinVerSetting">
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+    <MinVerMinimumMajorMinor>0.0</MinVerMinimumMajorMinor>
+  </PropertyGroup>
+
+</Project>

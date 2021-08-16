@@ -32,7 +32,7 @@ jobs:
       id: version
       with:
         tag-prefix: v
-        minimum-major-minor: 1.0
+        minimum-major-minor: 0.0
         
     - name: Pack via 7z
       if: ${{ success() && startsWith(github.ref, 'refs/tags/') }}
