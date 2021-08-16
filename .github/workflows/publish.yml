@@ -25,7 +25,7 @@ jobs:
     - name: dotnet Publish
       run: |
         echo ${{ github.ref }}      
-        dotnet publish Milki.Extensions.MixPlayer --no-self-contained --configuration Release --output ci-publish-Milki.Extensions.MixPlayer
+        dotnet publish src/Milki.Extensions.MixPlayer --no-self-contained --configuration Release --output ci-publish-Milki.Extensions.MixPlayer
         
     - name: action-minver
       uses: thefringeninja/action-minver@2.0.0-preview1
@@ -55,7 +55,7 @@ jobs:
     - name: Nuget Publish Milki.Extensions.MixPlayer
       uses: brandedoutcast/publish-nuget@v2.5.2
       with:
-        PROJECT_FILE_PATH: Milki.Extensions.MixPlayer/Milki.Extensions.MixPlayer.csproj
+        PROJECT_FILE_PATH: src/Milki.Extensions.MixPlayer/Milki.Extensions.MixPlayer.csproj
         VERSION_STATIC: ${{ steps.version.outputs.version }}
         NUGET_KEY: ${{secrets.NUGET_API_KEY}}
         TAG_COMMIT: false
