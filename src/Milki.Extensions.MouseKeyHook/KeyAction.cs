@@ -1,6 +1,6 @@
 ﻿namespace Milki.Extensions.MouseKeyHook;
 
-public enum CallBackType
+public enum KeyAction
 {
-    Down, Up
+    KeyDown, KeyUp
 }

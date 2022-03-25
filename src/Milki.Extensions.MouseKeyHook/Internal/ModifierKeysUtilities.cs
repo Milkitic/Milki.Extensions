@@ -1,8 +1,8 @@
-﻿namespace Milki.Extensions.MouseKeyHook;
+﻿namespace Milki.Extensions.MouseKeyHook.Internal;
 
-public static class ModifierKeysUtilities
+internal static class ModifierKeysUtilities
 {
-    public static ModifierKeys? GetModifierKeyFromCode(int keyCode)
+    public static ModifierKeys GetModifierKeyFromCode(int keyCode)
     {
         switch (keyCode)
         {
@@ -26,7 +26,7 @@ public static class ModifierKeysUtilities
                 return ModifierKeys.WindowsKey;
 
             default:
-                return null;
+                return ModifierKeys.None;
         }
     }
 }

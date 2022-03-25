@@ -1,12 +1,12 @@
 <Project>
     <PropertyGroup>
-        <LangVersion>9.0</LangVersion>
+        <LangVersion>10</LangVersion>
         <nullable>enable</nullable>
         <Authors>Milki</Authors>
-        <PackageProjectUrl>https://github.com/Milkitic/Milki.Extensions.MixPlayer</PackageProjectUrl>
+        <PackageProjectUrl>https://github.com/Milkitic/Milki.Extensions</PackageProjectUrl>
         <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-        <PackageLicenseExpression>LGPL-2.1-only</PackageLicenseExpression>
-        <Copyright>Copyright © Milki 2021</Copyright>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <Copyright>Copyright © Milki 2022</Copyright>
     </PropertyGroup>
 
   <PropertyGroup Label="MinVerSetting">

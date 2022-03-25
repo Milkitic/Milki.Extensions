@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Milki.Extensions.MixPlayer"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Milki.Extensions.MouseKeyHook", "Milki.Extensions.MouseKeyHook\Milki.Extensions.MouseKeyHook.csproj", "{58DF93A7-C165-4992-8802-46F4C1BABF97}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0060557C-C044-41BB-B781-DD0AD74F4ED1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

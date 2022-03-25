@@ -8,7 +8,7 @@ namespace Milki.Extensions.MouseKeyHook;
 ///  Specifies key codes and modifiers.
 /// </summary>
 [Flags]
-public enum Keys
+public enum HookKeys
 {
     /// <summary>
     ///  The bit mask to extract a key code from a key value.

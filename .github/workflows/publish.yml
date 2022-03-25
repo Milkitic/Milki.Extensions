@@ -17,7 +17,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: 6.0.x
         
     #- name: Restore dependencies
     #  run: dotnet restore
@@ -26,11 +26,7 @@ jobs:
       run: |
         echo ${{ github.ref }}      
         dotnet pack src/Milki.Extensions.MixPlayer --configuration Release --output ci-pack-Milki.Extensions.MixPlayer
-      
-    - name: dotnet Build ILMerged
-      run: |
-        dotnet add src/Milki.Extensions.MixPlayer package Costura.Fody
-        dotnet build src/Milki.Extensions.MixPlayer --configuration Release --output ci-release-Milki.Extensions.MixPlayer
+        dotnet pack src/Milki.Extensions.MouseKeyHook --configuration Release --output ci-pack-Milki.Extensions.MouseKeyHook
         
     - name: action-minver
       uses: thefringeninja/action-minver@2.0.0-preview1
@@ -38,12 +34,6 @@ jobs:
       with:
         tag-prefix: v
         minimum-major-minor: 0.0
-        
-    - name: Pack via 7z
-      if: ${{ success() && startsWith(github.ref, 'refs/tags/') }}
-      run: |
-        mkdir -p ./ci-7zpack/
-        7z a "./ci-7zpack/Milki.Extensions.MixPlayer-ILMerged.${{ steps.version.outputs.version }}.7z" "./ci-release-Milki.Extensions.MixPlayer/*" -r
       
     - name: Create a new GitHub release if a new tag is pushed
       uses: softprops/action-gh-release@v1
@@ -56,13 +46,24 @@ jobs:
         draft: false
         files: |
           ./ci-pack-Milki.Extensions.MixPlayer/Milki.Extensions.MixPlayer.${{ steps.version.outputs.version }}.nupkg
-          ./ci-7zpack/Milki.Extensions.MixPlayer-ILMerged.${{ steps.version.outputs.version }}.7z
+          ./ci-pack-Milki.Extensions.MouseKeyHook/Milki.Extensions.MouseKeyHook.${{ steps.version.outputs.version }}.nupkg
 
     - name: Nuget Publish Milki.Extensions.MixPlayer
-      uses: brandedoutcast/publish-nuget@v2.5.2
+      uses: Rebel028/publish-nuget@v2.7.0
       if: ${{ success() }}
       with:
         PROJECT_FILE_PATH: src/Milki.Extensions.MixPlayer/Milki.Extensions.MixPlayer.csproj
         VERSION_STATIC: ${{ steps.version.outputs.version }}
         NUGET_KEY: ${{secrets.NUGET_API_KEY}}
+        GITHUB_USER: Milkitic
+        TAG_COMMIT: false
+
+    - name: Nuget Publish Milki.Extensions.MouseKeyHook
+      uses: Rebel028/publish-nuget@v2.7.0
+      if: ${{ success() }}
+      with:
+        PROJECT_FILE_PATH: src/Milki.Extensions.MouseKeyHook/Milki.Extensions.MouseKeyHook.csproj
+        VERSION_STATIC: ${{ steps.version.outputs.version }}
+        NUGET_KEY: ${{secrets.NUGET_API_KEY}}
+        GITHUB_USER: Milkitic
         TAG_COMMIT: false
