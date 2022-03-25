@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31402.337
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32210.238
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Milki.Extensions.MixPlayer", "Milki.Extensions.MixPlayer\Milki.Extensions.MixPlayer.csproj", "{EF6AC1DF-D7AD-45F0-A549-AAAA96961113}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Milki.Extensions.MouseKeyHook", "Milki.Extensions.MouseKeyHook\Milki.Extensions.MouseKeyHook.csproj", "{58DF93A7-C165-4992-8802-46F4C1BABF97}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{EF6AC1DF-D7AD-45F0-A549-AAAA96961113}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EF6AC1DF-D7AD-45F0-A549-AAAA96961113}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EF6AC1DF-D7AD-45F0-A549-AAAA96961113}.Release|Any CPU.Build.0 = Release|Any CPU
+		{58DF93A7-C165-4992-8802-46F4C1BABF97}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{58DF93A7-C165-4992-8802-46F4C1BABF97}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{58DF93A7-C165-4992-8802-46F4C1BABF97}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{58DF93A7-C165-4992-8802-46F4C1BABF97}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
