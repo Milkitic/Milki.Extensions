@@ -43,18 +43,21 @@ public class DeviceDescription : IEquatable<DeviceDescription>
         return Equals((DeviceDescription)obj);
     }
 
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            return ((int)WavePlayerType * 397) ^ (DeviceId != null ? DeviceId.GetHashCode() : 0);
+        }
+    }
+
     public bool Equals(DeviceDescription? other)
     {
         if (ReferenceEquals(null, other)) return false;
         if (ReferenceEquals(this, other)) return true;
         return WavePlayerType == other.WavePlayerType && DeviceId == other.DeviceId;
     }
-
-    public override int GetHashCode()
-    {
-        return HashCode.Combine((int)WavePlayerType, DeviceId);
-    }
-
+    
     public static bool operator ==(DeviceDescription? left, DeviceDescription? right)
     {
         return Equals(left, right);

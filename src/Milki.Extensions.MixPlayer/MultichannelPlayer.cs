@@ -14,6 +14,7 @@ using Milki.Extensions.MixPlayer.Utilities;
 
 namespace Milki.Extensions.MixPlayer;
 
+[Fody.ConfigureAwait(false)]
 public abstract class MultichannelPlayer : IChannel
 {
     public event Action<PlayStatus>? PlayStatusChanged;

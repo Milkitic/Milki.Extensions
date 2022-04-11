@@ -8,97 +8,97 @@ using Milki.Extensions.MixPlayer.Threading;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
-namespace Milki.Extensions.MixPlayer.NAudioExtensions
+namespace Milki.Extensions.MixPlayer.NAudioExtensions;
+
+[Fody.ConfigureAwait(false)]
+public sealed class AudioPlaybackEngine : IDisposable
 {
-    public sealed class AudioPlaybackEngine : IDisposable
+    public delegate void PlaybackTimingChangedEvent(AudioPlaybackEngine sender, TimeSpan oldTimestamp, TimeSpan newTimestamp);
+
+    public event PlaybackTimingChangedEvent? Updated;
+        
+    private readonly VolumeSampleProvider _volumeProvider;
+    private readonly TimingSampleProvider _timingProvider;
+        
+    public AudioPlaybackEngine(int sampleRate = 44100, int channelCount = 2)
     {
-        public delegate void PlaybackTimingChangedEvent(AudioPlaybackEngine sender, TimeSpan oldTimestamp, TimeSpan newTimestamp);
-
-        public event PlaybackTimingChangedEvent? Updated;
-        
-        private readonly VolumeSampleProvider _volumeProvider;
-        private readonly TimingSampleProvider _timingProvider;
-        
-        public AudioPlaybackEngine(int sampleRate = 44100, int channelCount = 2)
+        Context = SynchronizationContext.Current ??
+                  new StaSynchronizationContext("AudioPlaybackEngine_STA");
+        WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channelCount);
+        FileWaveFormat = new WaveFormat(sampleRate, channelCount);
+        RootMixer = new MixingSampleProvider(WaveFormat)
         {
-            Context = SynchronizationContext.Current ??
-                      new StaSynchronizationContext("AudioPlaybackEngine_STA");
-            WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channelCount);
-            FileWaveFormat = new WaveFormat(sampleRate, channelCount);
-            RootMixer = new MixingSampleProvider(WaveFormat)
-            {
-                ReadFully = true
-            };
-            _volumeProvider = new VolumeSampleProvider(RootMixer);
-            _timingProvider = new TimingSampleProvider(_volumeProvider);
-            _timingProvider.Updated += (a, b) =>
-            {
-                Context.Send(_ => Updated?.Invoke(this, a, b), null);
-            };
-        }
-
-        public AudioPlaybackEngine(DeviceDescription deviceDescription, int sampleRate = 44100, int channelCount = 2)
+            ReadFully = true
+        };
+        _volumeProvider = new VolumeSampleProvider(RootMixer);
+        _timingProvider = new TimingSampleProvider(_volumeProvider);
+        _timingProvider.Updated += (a, b) =>
         {
-            Context = SynchronizationContext.Current ??
-                      new StaSynchronizationContext("AudioPlaybackEngine_STA");
-            WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channelCount);
-            FileWaveFormat = new WaveFormat(sampleRate, channelCount);
+            Context.Send(_ => Updated?.Invoke(this, a, b), null);
+        };
+    }
 
-            RootMixer = new MixingSampleProvider(WaveFormat)
-            {
-                ReadFully = true
-            };
-            _volumeProvider = new VolumeSampleProvider(RootMixer);
-            _timingProvider = new TimingSampleProvider(_volumeProvider);
-            _timingProvider.Updated += (a, b) =>
-            {
-                Context.Send(_ => Updated?.Invoke(this, a, b), null);
-            };
-            OutputDevice = DeviceCreationHelper.CreateDevice(out var actualDeviceInfo, deviceDescription, Context);
-            Context.Send(_ => OutputDevice.Init(_timingProvider), null);
-            OutputDevice.Play();
-        }
+    public AudioPlaybackEngine(DeviceDescription deviceDescription, int sampleRate = 44100, int channelCount = 2)
+    {
+        Context = SynchronizationContext.Current ??
+                  new StaSynchronizationContext("AudioPlaybackEngine_STA");
+        WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channelCount);
+        FileWaveFormat = new WaveFormat(sampleRate, channelCount);
 
-        public WaveFormat FileWaveFormat { get; set; }
-        public MixingSampleProvider RootMixer { get; }
-        public ISampleProvider Root => _timingProvider;
-        public IWavePlayer? OutputDevice { get; }
-        public SynchronizationContext Context { get; set; }
-
-        public float RootVolume
+        RootMixer = new MixingSampleProvider(WaveFormat)
         {
-            get => _volumeProvider.Volume;
-            set => _volumeProvider.Volume = value;
-        }
-
-        public WaveFormat WaveFormat { get; }
-
-        public void AddRootSample(ISampleProvider input)
+            ReadFully = true
+        };
+        _volumeProvider = new VolumeSampleProvider(RootMixer);
+        _timingProvider = new TimingSampleProvider(_volumeProvider);
+        _timingProvider.Updated += (a, b) =>
         {
-            if (!RootMixer.MixerInputs.Contains(input))
-                RootMixer.AddMixerInput(input);
-        }
+            Context.Send(_ => Updated?.Invoke(this, a, b), null);
+        };
+        OutputDevice = DeviceCreationHelper.CreateDevice(out var actualDeviceInfo, deviceDescription, Context);
+        Context.Send(_ => OutputDevice.Init(_timingProvider), null);
+        OutputDevice.Play();
+    }
 
-        public void RemoveRootSample(ISampleProvider input)
-        {
-            if (RootMixer.MixerInputs.Contains(input))
-                RootMixer.RemoveMixerInput(input);
-        }
+    public WaveFormat FileWaveFormat { get; set; }
+    public MixingSampleProvider RootMixer { get; }
+    public ISampleProvider Root => _timingProvider;
+    public IWavePlayer? OutputDevice { get; }
+    public SynchronizationContext Context { get; set; }
 
-        public async Task<ISampleProvider?> PlayRootSound(string path, SampleControl sampleControl)
-        {
-            var rootSample = await RootMixer
+    public float RootVolume
+    {
+        get => _volumeProvider.Volume;
+        set => _volumeProvider.Volume = value;
+    }
+
+    public WaveFormat WaveFormat { get; }
+
+    public void AddRootSample(ISampleProvider input)
+    {
+        if (!RootMixer.MixerInputs.Contains(input))
+            RootMixer.AddMixerInput(input);
+    }
+
+    public void RemoveRootSample(ISampleProvider input)
+    {
+        if (RootMixer.MixerInputs.Contains(input))
+            RootMixer.RemoveMixerInput(input);
+    }
+
+    public async Task<ISampleProvider?> PlayRootSound(string path, SampleControl sampleControl)
+    {
+        var rootSample = await RootMixer
                 .PlaySound(path, sampleControl)
-                ;
-            return rootSample;
-        }
+            ;
+        return rootSample;
+    }
 
-        public void Dispose()
-        {
-            if (OutputDevice != null)
-                Context.Send(_ => OutputDevice.Dispose(), null);
-            if (Context is IDisposable id)
-                id.Dispose();
-        }
+    public void Dispose()
+    {
+        if (OutputDevice != null)
+            Context.Send(_ => OutputDevice.Dispose(), null);
+        if (Context is IDisposable id)
+            id.Dispose();
     }
 }

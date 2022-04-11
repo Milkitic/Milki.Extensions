@@ -11,8 +11,10 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 /// <summary>
 /// Audio file to wave stream
 /// </summary>
+[Fody.ConfigureAwait(false)]
 internal static class ResampleHelper
 {
+    private static readonly ILogger? Logger = Configuration.Instance.GetCurrentClassLogger();
     public static async Task<MyAudioFileReader> GetResampledAudioFileReader(string path, WaveType type, WaveFormat newWaveFormat)
     {
         var stream = await Resample(path, newWaveFormat);
@@ -49,7 +51,7 @@ internal static class ResampleHelper
                 }
                 finally
                 {
-                    Console.WriteLine($"Resampled {Path.GetFileName(path)} in {sw.Elapsed.TotalMilliseconds:N2}ms");
+                    Logger?.LogDebug($"Resampled {Path.GetFileName(path)} in {sw.Elapsed.TotalMilliseconds:N2}ms");
                 }
             }
             catch (Exception ex)

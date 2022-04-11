@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 namespace Milki.Extensions.MixPlayer.Utilities;
 
+[Fody.ConfigureAwait(false)]
 public static class TaskEx
 {
     public static bool TaskSleep(int milliseconds, CancellationTokenSource? cts = null)

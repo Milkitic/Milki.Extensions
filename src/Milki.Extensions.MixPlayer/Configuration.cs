@@ -14,7 +14,7 @@ namespace Milki.Extensions.MixPlayer
         {
         }
 
-        public static Configuration Instance { get; } = new Configuration();
+        public static Configuration Instance { get; } = new();
 
         private ILoggerFactory? _factory;
         private uint _generalOffset = 0;
@@ -27,13 +27,15 @@ namespace Milki.Extensions.MixPlayer
         internal ILogger<T>? GetLogger<T>() => _factory?.CreateLogger<T>();
         internal ILogger? GetLogger(Type category)
         {
+            if (_factory == null) return null;
             var fullName = category.Namespace + "." + category.Name;
-            return _factory?.CreateLogger(fullName);
+            return _factory.CreateLogger(fullName);
         }
 
         internal ILogger? GetCurrentClassLogger()
         {
-            StackTrace stackTrace = new StackTrace();
+            if (_factory == null) return null;
+            var stackTrace = new StackTrace();
             StackFrame[]? stackFrames = stackTrace.GetFrames();
             if (stackFrames is { Length: > 1 })
             {

@@ -5,13 +5,16 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Milki.Extensions.MixPlayer.Utilities;
 using NAudio.Wave;
 
 namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 
+[Fody.ConfigureAwait(false)]
 public static class CachedSoundFactory
 {
+    private static readonly ILogger? Logger = Configuration.Instance.GetCurrentClassLogger();
     public static WaveType WavType => WaveType.Wav;
     private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, CachedSound?>>
         IdentifiersDictionary = new();
@@ -59,7 +62,7 @@ public static class CachedSoundFactory
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error while creating cached sound: {path}" + ex.Message);
+            Logger?.LogError($"Error while creating cached sound: {path}" + ex.Message);
             dict.TryAdd(path, null);
             return null;
         }
@@ -67,7 +70,7 @@ public static class CachedSoundFactory
         // Cache each file once before play.
         var sound = dict.GetOrAdd(path, cachedSound);
 
-        Console.WriteLine("Total size of cache usage: {0}", SharedUtils.SizeSuffix(
+        Logger?.LogDebug("Total size of cache usage: {0}", SharedUtils.SizeSuffix(
             IdentifiersDictionary
                 .SelectMany(k => k.Value)
                 .Sum(k => k.Value?.AudioData.Length * sizeof(float) ?? 0))
@@ -86,8 +89,7 @@ public static class CachedSoundFactory
 
     private static async Task<CachedSound> CreateCacheFromFile(WaveFormat waveFormat, string filePath)
     {
-        await using var audioFileReader =
-            await ResampleHelper.GetResampledAudioFileReader(filePath, WavType, waveFormat);
+        using var audioFileReader = await ResampleHelper.GetResampledAudioFileReader(filePath, WavType, waveFormat);
         var sw = Stopwatch.StartNew();
         var wholeData = new float[(int)(audioFileReader.Length / 4)];
         var actualWaveFormat = audioFileReader.WaveFormat;
@@ -109,7 +111,7 @@ public static class CachedSoundFactory
         finally
         {
             ArrayPool<float>.Shared.Return(readBuffer);
-            Console.WriteLine($"Cached {Path.GetFileName(filePath)} in {sw.Elapsed.TotalMilliseconds:N2}ms");
+            Logger?.LogDebug($"Cached {Path.GetFileName(filePath)} in {sw.Elapsed.TotalMilliseconds:N2}ms");
         }
     }
 }

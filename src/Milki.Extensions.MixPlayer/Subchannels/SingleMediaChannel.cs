@@ -12,6 +12,7 @@ using NAudio.Wave;
 
 namespace Milki.Extensions.MixPlayer.Subchannels;
 
+[Fody.ConfigureAwait(false)]
 public class SingleMediaChannel : Subchannel
 {
     private readonly string _path;
@@ -31,7 +32,10 @@ public class SingleMediaChannel : Subchannel
     public override float Volume
     {
         get => _fileReader?.Volume ?? 0;
-        set { if (_fileReader != null) _fileReader.Volume = value; }
+        set
+        {
+            if (_fileReader != null) _fileReader.Volume = value;
+        }
     }
 
     public override TimeSpan Duration { get; protected set; }
@@ -172,7 +176,7 @@ public class SingleMediaChannel : Subchannel
         }
 
         _speedProvider?.Reposition();
-        Position = time/*_fileReader.CurrentTime*/;
+        Position = time /*_fileReader.CurrentTime*/;
         RaisePositionUpdated(Position, true);
         Logger?.LogDebug("{0} skip: want: {1}; actual: {2}", Description, time, Position);
         _sw.SkipTo(time);
@@ -193,7 +197,7 @@ public class SingleMediaChannel : Subchannel
         }
 
         _speedProvider?.Reposition();
-        Position = time/*_fileReader.CurrentTime*/;
+        Position = time /*_fileReader.CurrentTime*/;
         RaisePositionUpdated(Position, false);
         _sw.SkipTo(time);
         await Task.CompletedTask;
@@ -241,7 +245,11 @@ public class SingleMediaChannel : Subchannel
         //Logger.Debug($"Disposing: Disposed base.");
         _speedProvider?.Dispose();
         Logger?.LogDebug($"Disposing: Disposed {nameof(_speedProvider)}.");
-        if (_fileReader != null) await _fileReader.DisposeAsync();
+        if (_fileReader != null)
+        {
+            _fileReader.Dispose();
+        }
+
         Logger?.LogDebug($"Disposing: Disposed {nameof(_fileReader)}.");
     }
 }

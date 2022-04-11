@@ -11,7 +11,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels;
 
 internal class LoopProviders
 {
-    private readonly Dictionary<int, LoopProvider> _dictionary = new Dictionary<int, LoopProvider>();
+    private readonly Dictionary<int, LoopProvider> _dictionary = new();
 
     public bool ShouldRemoveAll(int channel)
     {
@@ -20,15 +20,24 @@ internal class LoopProviders
 
     public bool ChangeAllVolumes(float volume)
     {
-        foreach (var (channel, loopProvider) in _dictionary.ToList())
+        foreach (var kvp in _dictionary.ToList())
+        {
+            var channel = kvp.Key;
+            var loopProvider = kvp.Value;
             loopProvider.SetVolume(volume);
+        }
         return true;
     }
 
     public bool ChangeAllBalances(float balance)
     {
-        foreach (var (channel, loopProvider) in _dictionary.ToList())
+        foreach (var kvp in _dictionary.ToList())
+        {
+            var channel = kvp.Key;
+            var loopProvider = kvp.Value;
             loopProvider.SetBalance(balance);
+        }
+
         return true;
     }
 
@@ -66,8 +75,11 @@ internal class LoopProviders
 
     public void RemoveAll(MixingSampleProvider? mixer)
     {
-        foreach (var (channel, loopProvider) in _dictionary.ToList())
+        foreach (var kvp in _dictionary.ToList())
         {
+            var channel = kvp.Key;
+            var loopProvider = kvp.Value;
+
             loopProvider.RemoveFrom(mixer);
             loopProvider.Dispose();
             _dictionary.Remove(channel);

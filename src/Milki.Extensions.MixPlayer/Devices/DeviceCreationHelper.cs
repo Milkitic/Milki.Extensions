@@ -13,8 +13,9 @@ public static class DeviceCreationHelper
 {
     private static readonly ILogger? Logger = Configuration.Instance.GetCurrentClassLogger();
     private static readonly MMDeviceEnumerator MmDeviceEnumerator;
+
     // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
-    private static readonly MmNotificationClient MmNotificationClientCallBack;
+    private static readonly MmNotificationClient? MmNotificationClientCallBack;
 
     private static IReadOnlyList<DeviceDescription>? _cacheList;
     private static readonly object SetLock = new();
@@ -28,6 +29,7 @@ public static class DeviceCreationHelper
         MmNotificationClientCallBack = new MmNotificationClient();
         MmDeviceEnumerator.RegisterEndpointNotificationCallback(MmNotificationClientCallBack);
     }
+
     public static IWavePlayer? CurrentDevice { get; private set; }
 
     private static IReadOnlyList<DeviceDescription>? CacheList
@@ -76,7 +78,6 @@ public static class DeviceCreationHelper
         return device;
     }
 
-
     public static IReadOnlyList<DeviceDescription> GetCachedAvailableDevices()
     {
         if (CacheList != null)
@@ -117,8 +118,8 @@ public static class DeviceCreationHelper
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error while creating WASAPI device {description.DeviceId}: " +
-                                  ex.Message);
+                Logger?.LogError($"Error while creating WASAPI device {description.DeviceId}: " +
+                                 ex.Message);
             }
         }
 
@@ -153,7 +154,7 @@ public static class DeviceCreationHelper
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error while enumerating DirectSoundOut device: {0}", ex.Message);
+                Logger?.LogError("Error while enumerating DirectSoundOut device: {0}", ex.Message);
             }
 
             if (info != null)
@@ -178,7 +179,7 @@ public static class DeviceCreationHelper
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error while enumerating WASAPI device: {0}", ex.Message);
+                Logger?.LogError("Error while enumerating WASAPI device: {0}", ex.Message);
             }
 
             if (info != null)
@@ -201,7 +202,7 @@ public static class DeviceCreationHelper
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error while enumerating ASIO device: {0}", ex.Message);
+                Logger?.LogError("Error while enumerating ASIO device: {0}", ex.Message);
             }
 
             if (info != null)
