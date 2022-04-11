@@ -70,8 +70,12 @@ namespace Milki.Extensions.MixPlayer
                 {
                     _engine.RootMixer.ReadFully = false;
                     foreach (var subchannel in _channels)
+                    {
                         if (subchannel.Submixer != null)
+                        {
                             subchannel.Submixer.ReadFully = false;
+                        }
+                    }
                 }
             };
 

@@ -7,250 +7,216 @@ using NAudio.CoreAudioApi;
 using NAudio.CoreAudioApi.Interfaces;
 using NAudio.Wave;
 
-namespace Milki.Extensions.MixPlayer.Devices
+namespace Milki.Extensions.MixPlayer.Devices;
+
+public static class DeviceCreationHelper
 {
-    public static class DeviceCreationHelper
+    private static readonly ILogger? Logger = Configuration.Instance.GetCurrentClassLogger();
+    private static readonly MMDeviceEnumerator MmDeviceEnumerator;
+    // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
+    private static readonly MmNotificationClient MmNotificationClientCallBack;
+
+    private static IReadOnlyList<DeviceDescription>? _cacheList;
+    private static readonly object SetLock = new();
+
+    static DeviceCreationHelper()
     {
-        private static readonly ILogger? Logger = Configuration.Instance.GetCurrentClassLogger();
-        // ReSharper disable once InconsistentNaming
-        private static readonly MMDeviceEnumerator _MMDeviceEnumerator;
-        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
-        // ReSharper disable once InconsistentNaming
-        private static readonly MMNotificationClient _MMNotificationClient;
-        private static readonly object SetLock = new object();
+        MmDeviceEnumerator = new MMDeviceEnumerator();
+        AppDomain.CurrentDomain.ProcessExit += (_, _) => MmDeviceEnumerator.Dispose();
 
-        private static HashSet<DeviceInfo>? _cacheDeviceInfos;
+        if (Environment.OSVersion.Version.Major < 6) return;
+        MmNotificationClientCallBack = new MmNotificationClient();
+        MmDeviceEnumerator.RegisterEndpointNotificationCallback(MmNotificationClientCallBack);
+    }
+    public static IWavePlayer? CurrentDevice { get; private set; }
 
-        static DeviceCreationHelper()
+    private static IReadOnlyList<DeviceDescription>? CacheList
+    {
+        get
         {
-            _MMDeviceEnumerator = new MMDeviceEnumerator();
-            _MMNotificationClient = new MMNotificationClient();
-            _MMDeviceEnumerator.RegisterEndpointNotificationCallback(_MMNotificationClient);
+            lock (SetLock) return _cacheList;
+        }
+        set
+        {
+            lock (SetLock) _cacheList = value;
+        }
+    }
+
+    public static IWavePlayer CreateDevice(out DeviceDescription actualDescription,
+        DeviceDescription? description = null,
+        SynchronizationContext? context = null)
+    {
+        IWavePlayer? device = null;
+        if (context != null)
+        {
+            context.Send(_ => device = CreationCore(ref description), null);
+        }
+        else
+        {
+            device = CreationCore(ref description);
         }
 
-        private static HashSet<DeviceInfo>? CacheDeviceInfos
+        CurrentDevice = device!;
+        actualDescription = description!;
+        return device!;
+    }
+
+    private static IWavePlayer? CreationCore(ref DeviceDescription? description)
+    {
+        description ??= MmDeviceEnumerator.HasDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia)
+            ? DeviceDescription.WasapiDefault
+            : DeviceDescription.DirectSoundDefault;
+        var device = description.WavePlayerType switch
         {
-            get
-            {
-                lock (SetLock) return _cacheDeviceInfos;
-            }
-            set
-            {
-                lock (SetLock) _cacheDeviceInfos = value;
-            }
+            WavePlayerType.DirectSound => TryCreateDirectSoundOrDefault(description),
+            WavePlayerType.WASAPI => TryCreateWasapiOrDefault(description),
+            WavePlayerType.ASIO => TryCreateAsioOrDefault(description),
+            _ => throw new ArgumentOutOfRangeException()
+        };
+        return device;
+    }
+
+
+    public static IReadOnlyList<DeviceDescription> GetCachedAvailableDevices()
+    {
+        if (CacheList != null)
+        {
+            return CacheList;
         }
 
-        public static IWavePlayer CreateDevice(out DeviceInfo actualDeviceInfo,
-            in DeviceInfo? deviceInfo = null,
-            SynchronizationContext? context = null)
-        {
-            DeviceInfo actual;
-            if (deviceInfo is null) // use default profile
-            {
-                actual = GetDefaultDeviceInfo();
-            }
-            else
-            {
-                var hashSet = GetAllAvailableDevices();
-                actual = hashSet.TryGetValue(deviceInfo, out var foundResult)
-                    ? foundResult
-                    : GetDefaultDeviceInfo();
-            }
+        return CacheList = EnumerateDeviceDescriptions().ToArray();
+    }
 
-            IWavePlayer? device = null;
+    private static IWavePlayer TryCreateDirectSoundOrDefault(DeviceDescription description)
+    {
+        IWavePlayer device;
+        if (description.Equals(DeviceDescription.DirectSoundDefault))
+        {
+            device = new DirectSoundOut(description.Latency);
+        }
+        else
+        {
+            device = new DirectSoundOut(Guid.Parse(description.DeviceId!), description.Latency);
+        }
+
+        return device;
+    }
+
+    private static IWavePlayer TryCreateWasapiOrDefault(DeviceDescription description)
+    {
+        if (!description.Equals(DeviceDescription.WasapiDefault))
+        {
             try
             {
-                Func<IWavePlayer> func;
-
-                int safeLatency;
-                switch (actual.Provider)
-                {
-                    case Providers.DirectSound:
-                        safeLatency = 40;
-                        var actual1 = actual;
-                        func = () => actual1.Equals(DeviceInfo.DefaultDirectSound)
-                            ? new DirectSoundOut(safeLatency)
-                            : new DirectSoundOut(Guid.Parse(actual1.Id!),
-                                Math.Max(actual1.Latency, safeLatency));
-                        break;
-                    case Providers.Wasapi:
-                        safeLatency = 1;
-                        if (actual.Equals(DeviceInfo.DefaultWasapi))
-                        {
-                            func = () => new WasapiOut(AudioClientShareMode.Shared, safeLatency);
-                        }
-                        else
-                        {
-                            var actual2 = actual;
-                            func = () => new WasapiOut(actual2.MMDevice,
-                                actual2.WasapiConfig?.IsExclusiveMode == true
-                                    ? AudioClientShareMode.Exclusive
-                                    : AudioClientShareMode.Shared, true,
-                                actual2.Latency);
-                        }
-
-                        break;
-                    case Providers.Asio:
-                        var actual3 = actual;
-                        func = () => new AsioOut(actual3.Name);
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(deviceInfo.Provider), actual.Provider, null);
-                }
-
-                if (context != null)
-                    context.Send(_ => device = func.Invoke(), null);
-                else
-                    device = func.Invoke();
+                var mmDevice = MmDeviceEnumerator.GetDevice(description.DeviceId);
+                IWavePlayer device = new WasapiOut(mmDevice,
+                    description.IsExclusive ? AudioClientShareMode.Exclusive : AudioClientShareMode.Shared,
+                    true,
+                    description.Latency);
+                return device;
             }
             catch (Exception ex)
             {
-                Logger?.LogError(ex, "Error while creating device. Force to use DirectSound!!");
-                device?.Dispose();
-                actual = DeviceInfo.DefaultDirectSound;
-                if (context != null)
-                    context.Send(_ => device = new DirectSoundOut(40), null);
-                else
-                    device = new DirectSoundOut(40);
+                Console.WriteLine($"Error while creating WASAPI device {description.DeviceId}: " +
+                                  ex.Message);
             }
-
-            actualDeviceInfo = actual;
-            return device!;
         }
 
-        private static DeviceInfo GetDefaultDeviceInfo()
+        return new WasapiOut(description.IsExclusive ? AudioClientShareMode.Exclusive : AudioClientShareMode.Shared,
+            description.Latency);
+    }
+
+    private static IWavePlayer TryCreateAsioOrDefault(DeviceDescription description)
+    {
+        if (Thread.CurrentThread.GetApartmentState() != ApartmentState.STA)
         {
-            DeviceInfo deviceInfo;
-            if (_MMDeviceEnumerator.HasDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia))
-            {
-                deviceInfo = DeviceInfo.DefaultWasapi;
-                Logger?.LogInformation("The output device in app's config was not detected in this system, use WASAPI default.");
-            }
-            else
-            {
-                deviceInfo = DeviceInfo.DefaultDirectSound;
-                Logger.LogWarning("The output device in app's config was not detected " +
-                                  "or no output device detected in this system, use DirectSoundOut default!!!");
-            }
-
-            return deviceInfo;
+            throw new Exception("STA Thread required for ASIO creation.");
         }
 
-        public static HashSet<DeviceInfo> GetAllAvailableDevices()
+        IWavePlayer device = new AsioOut(description.DeviceId);
+        return device;
+    }
+
+    private static IEnumerable<DeviceDescription> EnumerateDeviceDescriptions()
+    {
+        foreach (var dev in DirectSoundOut.Devices)
         {
-            if (CacheDeviceInfos != null)
-                return CacheDeviceInfos;
-            var result = EnumerateAvailableDevices().ToHashSet();
-            CacheDeviceInfos = result;
-            return result;
+            DeviceDescription? info = null;
+            try
+            {
+                info = new DeviceDescription
+                {
+                    DeviceId = dev.Guid.ToString(),
+                    FriendlyName = dev.Description,
+                    WavePlayerType = WavePlayerType.DirectSound
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error while enumerating DirectSoundOut device: {0}", ex.Message);
+            }
+
+            if (info != null)
+            {
+                yield return info;
+            }
         }
 
-        private static IEnumerable<DeviceInfo> EnumerateAvailableDevices()
+        yield return DeviceDescription.WasapiDefault;
+        foreach (var wasapi in MmDeviceEnumerator.EnumerateAudioEndPoints(DataFlow.All, DeviceState.All))
         {
-            yield return DeviceInfo.DefaultWasapi;
-
-            foreach (var dev in DirectSoundOut.Devices)
+            DeviceDescription? info = null;
+            try
             {
-                DeviceInfo? info = null;
-                try
+                if (wasapi.DataFlow != DataFlow.Render || wasapi.State != DeviceState.Active) continue;
+                info = new DeviceDescription
                 {
-                    info = new DeviceInfo(Providers.DirectSound, dev.Guid.ToString(), dev.Description);
-                }
-                catch (Exception ex)
-                {
-                    Logger?.LogError("Error while enumerating DirectSoundOut device: {0}", ex.Message);
-                }
-
-                if (info != null)
-                {
-                    yield return info;
-                }
+                    DeviceId = wasapi.ID,
+                    FriendlyName = wasapi.FriendlyName,
+                    WavePlayerType = WavePlayerType.WASAPI
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error while enumerating WASAPI device: {0}", ex.Message);
             }
 
-            foreach (var wasapi in _MMDeviceEnumerator.EnumerateAudioEndPoints(DataFlow.All, DeviceState.All))
+            if (info != null)
             {
-                DeviceInfo? info = null;
-                try
-                {
-                    if (wasapi.DataFlow != DataFlow.Render || wasapi.State != DeviceState.Active) continue;
-                    info = new DeviceInfo(Providers.Wasapi, wasapi.ID, wasapi.FriendlyName)
-                    {
-                        MMDevice = wasapi
-                    };
-                }
-                catch (Exception ex)
-                {
-                    Logger?.LogError("Error while enumerating WASAPI device: {0}", ex.Message);
-                }
-
-                if (info != null)
-                {
-                    yield return info;
-                }
-            }
-
-            foreach (var asio in AsioOut.GetDriverNames())
-            {
-                DeviceInfo? info = null;
-                try
-                {
-                    info = new DeviceInfo(Providers.Asio, null, asio);
-                }
-                catch (Exception ex)
-                {
-                    Logger?.LogError("Error while enumerating ASIO device: {0}", ex.Message);
-                }
-
-                if (info != null)
-                {
-                    yield return info;
-                }
+                yield return info;
             }
         }
 
-        // ReSharper disable once InconsistentNaming
-        private class MMNotificationClient : IMMNotificationClient
+        foreach (var asio in AsioOut.GetDriverNames())
         {
-            private static readonly ILogger? InnerLogger = Configuration.Instance.GetCurrentClassLogger();
-            public MMNotificationClient()
+            DeviceDescription? info = null;
+            try
             {
-                //_realEnumerator.RegisterEndpointNotificationCallback();
-                if (Environment.OSVersion.Version.Major < 6)
+                info = new DeviceDescription
                 {
-                    throw new NotSupportedException("This functionality is only supported on Windows Vista or newer.");
-                }
+                    DeviceId = asio,
+                    FriendlyName = asio,
+                    WavePlayerType = WavePlayerType.ASIO
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error while enumerating ASIO device: {0}", ex.Message);
             }
 
-            public void OnDeviceStateChanged(string deviceId, DeviceState newState)
+            if (info != null)
             {
-                CacheDeviceInfos = null;
-                InnerLogger?.LogDebug("OnDeviceStateChanged\n Device Id -->{0} : Device State {1}", deviceId, newState);
-            }
-
-            public void OnDeviceAdded(string pwstrDeviceId)
-            {
-                CacheDeviceInfos = null;
-                InnerLogger?.LogDebug("OnDeviceAdded --> " + pwstrDeviceId);
-            }
-
-            public void OnDeviceRemoved(string deviceId)
-            {
-                CacheDeviceInfos = null;
-                InnerLogger?.LogDebug("OnDeviceRemoved --> " + deviceId);
-            }
-
-            public void OnDefaultDeviceChanged(DataFlow flow, Role role, string defaultDeviceId)
-            {
-                CacheDeviceInfos = null;
-                InnerLogger?.LogDebug("OnDefaultDeviceChanged --> {0}", flow.ToString());
-            }
-
-            public void OnPropertyValueChanged(string pwstrDeviceId, PropertyKey key)
-            {
-                //fmtid & pid are changed to formatId and propertyId in the latest version NAudio
-                //InnerLogger?.LogDebug("OnPropertyValueChanged: formatId --> {0}  propertyId --> {1}",
-                //    key.formatId.ToString(), key.propertyId.ToString());
+                yield return info;
             }
         }
+    }
+
+    private class MmNotificationClient : IMMNotificationClient
+    {
+        public void OnDeviceStateChanged(string deviceId, DeviceState newState) => CacheList = null;
+        public void OnDeviceAdded(string pwstrDeviceId) => CacheList = null;
+        public void OnDeviceRemoved(string deviceId) => CacheList = null;
+        public void OnDefaultDeviceChanged(DataFlow flow, Role role, string defaultDeviceId) => CacheList = null;
+        public void OnPropertyValueChanged(string pwstrDeviceId, PropertyKey key) { }
     }
 }

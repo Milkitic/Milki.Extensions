@@ -35,7 +35,7 @@ namespace Milki.Extensions.MixPlayer
         {
             StackTrace stackTrace = new StackTrace();
             StackFrame[]? stackFrames = stackTrace.GetFrames();
-            if (stackFrames != null && stackFrames.Length > 1)
+            if (stackFrames is { Length: > 1 })
             {
                 var frame1 = stackFrames[1];
                 var type = frame1.GetMethod().ReflectedType;

@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Milki.Extensions.MixPlayer.NAudioExtensions;
 using Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 using Milki.Extensions.MixPlayer.Utilities;
+using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
 namespace Milki.Extensions.MixPlayer.Subchannels
@@ -63,7 +64,6 @@ namespace Milki.Extensions.MixPlayer.Subchannels
 
         public sealed override bool UseTempo { get; protected set; }
 
-
         public MixingSampleProvider? Submixer { get; protected set; }
 
         /// <summary>
@@ -87,7 +87,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
         {
             if (Submixer == null)
             {
-                Submixer = new MixingSampleProvider(WaveFormatFactory.IeeeWaveFormat)
+                Submixer = new MixingSampleProvider(Engine.WaveFormat)
                 {
                     ReadFully = true
                 };
@@ -104,14 +104,14 @@ namespace Milki.Extensions.MixPlayer.Subchannels
             };
             if (_volumeProvider != null) _volumeProvider.Volume = Volume;
 
-            await RequeueAsync(TimeSpan.Zero).ConfigureAwait(false);
+            await RequeueAsync(TimeSpan.Zero);
             var elements = SoundElements ?? new List<SoundElement>();
 
             //var ordered = soundElements.OrderBy(k => k.Offset).ToArray();
             var lasts = elements
                 .Skip(elements.Count > 9 ? elements.Count - 9 : elements.Count)
                 .AsParallel()
-                .Select(async k => (k, await k.GetNearEndTimeAsync()));
+                .Select(async k => (k, await k.GetNearEndTimeAsync(Engine.FileWaveFormat)));
             await Task.WhenAll(lasts);
             var last9Elements = lasts.Select(k => k.Result).ToArray();
 
@@ -130,14 +130,14 @@ namespace Milki.Extensions.MixPlayer.Subchannels
             //        .AsParallel()
             //        .WithDegreeOfParallelism(Environment.ProcessorCount > 1 ? Environment.ProcessorCount - 1 : 1)
             //        .ForAll(k => CachedSound.CreateCacheSounds(new[] { k.FilePath }).Wait());
-            //}).ConfigureAwait(false);
+            //});
 
             //await CachedSound.CreateCacheSounds(SoundElements
             //    .Where(k => k.FilePath != null)
             //    .Select(k => k.FilePath));
 
             var configuration = Configuration.Instance;
-            await SetPlaybackRate(configuration.PlaybackRate, configuration.KeepTune).ConfigureAwait(false);
+            await SetPlaybackRate(configuration.PlaybackRate, configuration.KeepTune);
             PlayStatus = PlayStatus.Ready;
         }
 
@@ -145,7 +145,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
         {
             if (PlayStatus == PlayStatus.Playing) return;
 
-            await ReadyLoopAsync().ConfigureAwait(false);
+            await ReadyLoopAsync();
 
             StartPlayTask();
             RaisePositionUpdated(_sw.Elapsed, true);
@@ -157,7 +157,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
         {
             if (PlayStatus == PlayStatus.Paused) return;
 
-            await CancelLoopAsync().ConfigureAwait(false);
+            await CancelLoopAsync();
 
             RaisePositionUpdated(_sw.Elapsed, true);
             PlayStatus = PlayStatus.Paused;
@@ -168,8 +168,8 @@ namespace Milki.Extensions.MixPlayer.Subchannels
             if (PlayStatus is PlayStatus.Paused or PlayStatus.Ready or PlayStatus.Unknown &&
                 Position == TimeSpan.Zero) return;
 
-            await CancelLoopAsync().ConfigureAwait(false);
-            await SkipTo(TimeSpan.Zero).ConfigureAwait(false);
+            await CancelLoopAsync();
+            await SkipTo(TimeSpan.Zero);
             PlayStatus = PlayStatus.Paused;
         }
 
@@ -177,8 +177,8 @@ namespace Milki.Extensions.MixPlayer.Subchannels
         {
             if (Position == TimeSpan.Zero) return;
 
-            await SkipTo(TimeSpan.Zero).ConfigureAwait(false);
-            await Play().ConfigureAwait(false);
+            await SkipTo(TimeSpan.Zero);
+            await Play();
         }
 
         public override async Task SkipTo(TimeSpan time)
@@ -200,7 +200,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
 
                     PlayStatus = status;
                 }
-            }).ConfigureAwait(false);
+            });
             RaisePositionUpdated(_sw.Elapsed, true);
         }
 
@@ -257,7 +257,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
                 if (!_cts!.Token.IsCancellationRequested)
                 {
                     PlayStatus = PlayStatus.Finished;
-                    await SkipTo(TimeSpan.Zero).ConfigureAwait(false);
+                    await SkipTo(TimeSpan.Zero);
                 }
             }, TaskCreationOptions.LongRunning);
             _playingTask.Start();
@@ -279,8 +279,8 @@ namespace Milki.Extensions.MixPlayer.Subchannels
                     switch (soundElement.ControlType)
                     {
                         case SlideControlType.None:
-                            var cachedSound = await soundElement.GetCachedSoundAsync().ConfigureAwait(false);
-                            var flag = Submixer!.PlaySound(cachedSound, soundElement.Volume,
+                            var cachedSound = await soundElement.GetCachedSoundAsync(Submixer!.WaveFormat);
+                            var flag = Submixer.PlaySound(cachedSound, soundElement.Volume,
                                 soundElement.Balance * BalanceFactor);
                             if (soundElement.SubSoundElement != null)
                                 soundElement.SubSoundElement.RelatedProvider = flag;
@@ -311,8 +311,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
                                 _loopProviders.RemoveAll(Submixer);
                             }
 
-                            await _loopProviders.CreateAsync(soundElement, Submixer, BalanceFactor)
-                                .ConfigureAwait(false);
+                            await _loopProviders.CreateAsync(soundElement, Submixer!, BalanceFactor);
                             break;
                         case SlideControlType.StopRunning:
                             _loopProviders.Remove(soundElement.LoopChannel, Submixer);
@@ -338,7 +337,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
             var queue = new ConcurrentQueue<SoundElement>();
             if (SoundElements == null)
             {
-                var elements = new List<SoundElement>(await GetSoundElements().ConfigureAwait(false));
+                var elements = new List<SoundElement>(await GetSoundElements());
                 var subElements = elements
                     .Where(k => k.SubSoundElement != null)
                     .Select(k => k.SubSoundElement!)
@@ -357,7 +356,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
                         continue;
                     queue.Enqueue(i);
                 }
-            }).ConfigureAwait(false);
+            });
 
             _soundElementsQueue = queue;
         }
@@ -380,7 +379,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
             {
             }
 
-            await TaskEx.WhenAllSkipNull(_playingTask/*, _calibrationTask*/).ConfigureAwait(false);
+            await TaskEx.WhenAllSkipNull(_playingTask/*, _calibrationTask*/);
             Logger?.LogDebug(@"{0} task canceled.", Description);
         }
 
@@ -388,7 +387,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
 
         public override async ValueTask DisposeAsync()
         {
-            await Stop().ConfigureAwait(false);
+            await Stop();
             Logger?.LogDebug($"Disposing: Stopped.");
 
             _loopProviders.RemoveAll(Submixer);
@@ -397,7 +396,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
             Logger?.LogDebug($"Disposing: Disposed {nameof(_cts)}.");
             if (_volumeProvider != null)
                 Engine.RemoveRootSample(_volumeProvider);
-            //await base.DisposeAsync().ConfigureAwait(false);
+            //await base.DisposeAsync();
             //Logger.Debug($"Disposing: Disposed base.");
         }
     }

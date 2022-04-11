@@ -14,16 +14,56 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions
     {
         public delegate void PlaybackTimingChangedEvent(AudioPlaybackEngine sender, TimeSpan oldTimestamp, TimeSpan newTimestamp);
 
-        public IWavePlayer? OutputDevice { get; }
         public event PlaybackTimingChangedEvent? Updated;
-
-        public SynchronizationContext Context { get; set; }
-
+        
         private readonly VolumeSampleProvider _volumeProvider;
         private readonly TimingSampleProvider _timingProvider;
+        
+        public AudioPlaybackEngine(int sampleRate = 44100, int channelCount = 2)
+        {
+            Context = SynchronizationContext.Current ??
+                      new StaSynchronizationContext("AudioPlaybackEngine_STA");
+            WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channelCount);
+            FileWaveFormat = new WaveFormat(sampleRate, channelCount);
+            RootMixer = new MixingSampleProvider(WaveFormat)
+            {
+                ReadFully = true
+            };
+            _volumeProvider = new VolumeSampleProvider(RootMixer);
+            _timingProvider = new TimingSampleProvider(_volumeProvider);
+            _timingProvider.Updated += (a, b) =>
+            {
+                Context.Send(_ => Updated?.Invoke(this, a, b), null);
+            };
+        }
 
+        public AudioPlaybackEngine(DeviceDescription deviceDescription, int sampleRate = 44100, int channelCount = 2)
+        {
+            Context = SynchronizationContext.Current ??
+                      new StaSynchronizationContext("AudioPlaybackEngine_STA");
+            WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channelCount);
+            FileWaveFormat = new WaveFormat(sampleRate, channelCount);
+
+            RootMixer = new MixingSampleProvider(WaveFormat)
+            {
+                ReadFully = true
+            };
+            _volumeProvider = new VolumeSampleProvider(RootMixer);
+            _timingProvider = new TimingSampleProvider(_volumeProvider);
+            _timingProvider.Updated += (a, b) =>
+            {
+                Context.Send(_ => Updated?.Invoke(this, a, b), null);
+            };
+            OutputDevice = DeviceCreationHelper.CreateDevice(out var actualDeviceInfo, deviceDescription, Context);
+            Context.Send(_ => OutputDevice.Init(_timingProvider), null);
+            OutputDevice.Play();
+        }
+
+        public WaveFormat FileWaveFormat { get; set; }
         public MixingSampleProvider RootMixer { get; }
         public ISampleProvider Root => _timingProvider;
+        public IWavePlayer? OutputDevice { get; }
+        public SynchronizationContext Context { get; set; }
 
         public float RootVolume
         {
@@ -31,40 +71,7 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions
             set => _volumeProvider.Volume = value;
         }
 
-        public AudioPlaybackEngine()
-        {
-            Context = SynchronizationContext.Current ??
-                      new StaSynchronizationContext("AudioPlaybackEngine_STA");
-            RootMixer = new MixingSampleProvider(WaveFormatFactory.IeeeWaveFormat)
-            {
-                ReadFully = true
-            };
-            _volumeProvider = new VolumeSampleProvider(RootMixer);
-            _timingProvider = new TimingSampleProvider(_volumeProvider);
-            _timingProvider.Updated += (a, b) =>
-            {
-                Context.Send(_ => Updated?.Invoke(this, a, b), null);
-            };
-        }
-
-        public AudioPlaybackEngine(DeviceInfo deviceInfo)
-        {
-            Context = SynchronizationContext.Current ??
-                      new StaSynchronizationContext("AudioPlaybackEngine_STA");
-            RootMixer = new MixingSampleProvider(WaveFormatFactory.IeeeWaveFormat)
-            {
-                ReadFully = true
-            };
-            _volumeProvider = new VolumeSampleProvider(RootMixer);
-            _timingProvider = new TimingSampleProvider(_volumeProvider);
-            _timingProvider.Updated += (a, b) =>
-            {
-                Context.Send(_ => Updated?.Invoke(this, a, b), null);
-            };
-            OutputDevice = DeviceCreationHelper.CreateDevice(out var actualDeviceInfo, deviceInfo, Context);
-            Context.Send(_ => OutputDevice.Init(_timingProvider), null);
-            OutputDevice.Play();
-        }
+        public WaveFormat WaveFormat { get; }
 
         public void AddRootSample(ISampleProvider input)
         {
@@ -82,7 +89,7 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions
         {
             var rootSample = await RootMixer
                 .PlaySound(path, sampleControl)
-                .ConfigureAwait(false);
+                ;
             return rootSample;
         }
 

@@ -26,16 +26,9 @@ namespace Milki.Extensions.MixPlayer
 
         public bool HasSound => FilePath != null;
 
-        public async Task<double> GetNearEndTimeAsync()
+        public async Task<double> GetNearEndTimeAsync(WaveFormat waveFormat)
         {
-            var cachedSound = await GetCachedSoundAsync();
-            if (cachedSound == null) return 0;
-            return cachedSound.Duration.TotalMilliseconds + Offset;
-        }
-
-        public double GetNearEndTime()
-        {
-            var cachedSound = GetCachedSoundAsync().Result;
+            var cachedSound = await GetCachedSoundAsync(waveFormat);
             if (cachedSound == null) return 0;
             return cachedSound.Duration.TotalMilliseconds + Offset;
         }
@@ -118,7 +111,7 @@ namespace Milki.Extensions.MixPlayer
         internal ISampleProvider? RelatedProvider { get; set; }
         internal SoundElement? SubSoundElement { get; private set; }
 
-        internal async Task<CachedSound?> GetCachedSoundAsync()
+        internal async Task<CachedSound?> GetCachedSoundAsync(WaveFormat waveFormat)
         {
             if (_cachedSound != null)
                 return _cachedSound;
@@ -126,7 +119,7 @@ namespace Milki.Extensions.MixPlayer
             if (FilePath == null)
                 return null;
 
-            var result = await CachedSound.GetOrCreateCacheSound(FilePath).ConfigureAwait(false);
+            var result = await CachedSoundFactory.GetOrCreateCacheSound(waveFormat, FilePath);
             _cachedSound = result;
             return result;
         }

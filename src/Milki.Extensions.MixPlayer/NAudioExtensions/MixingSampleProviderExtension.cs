@@ -24,7 +24,8 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions
         public static async Task<ISampleProvider?> PlaySound(this MixingSampleProvider mixer, string path,
             SampleControl sampleControl)
         {
-            var sound = await CachedSound.GetOrCreateCacheSound(path).ConfigureAwait(false);
+            var waveFormat = new WaveFormat(mixer.WaveFormat.SampleRate, mixer.WaveFormat.Channels);
+            var sound = await CachedSoundFactory.GetOrCreateCacheSound(waveFormat, path);
             PlaySound(mixer, sound, sampleControl, out var rootSample);
             return rootSample;
         }
@@ -32,7 +33,8 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions
         public static async Task<ISampleProvider?> PlaySound(this MixingSampleProvider mixer, string path,
             float volume, float balance)
         {
-            var sound = await CachedSound.GetOrCreateCacheSound(path).ConfigureAwait(false);
+            var waveFormat = new WaveFormat(mixer.WaveFormat.SampleRate, mixer.WaveFormat.Channels);
+            var sound = await CachedSoundFactory.GetOrCreateCacheSound(waveFormat, path);
             PlaySound(mixer, sound, volume, balance, out var rootSample);
             return rootSample;
         }
