@@ -3,7 +3,7 @@ using NAudio.Wave;
 
 namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 
-public class CachedSound
+public struct CachedSound : IEquatable<CachedSound>
 {
     public string SourcePath { get; }
     public float[] AudioData { get; }
@@ -25,7 +25,7 @@ public class CachedSound
         return ReferenceEquals(this, obj);
     }
 
-    protected bool Equals(CachedSound other)
+    public bool Equals(CachedSound other)
     {
         return SourcePath == other.SourcePath;
     }

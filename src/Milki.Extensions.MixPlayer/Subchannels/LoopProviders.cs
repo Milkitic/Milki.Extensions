@@ -94,11 +94,11 @@ internal class LoopProviders
         var loopChannel = soundElement.LoopChannel.Value;
         Remove(loopChannel, mixer);
 
-        var byteArray = new byte[cachedSound.AudioData.Length * sizeof(float)];
-        Buffer.BlockCopy(cachedSound.AudioData, 0, byteArray, 0, byteArray.Length);
+        var byteArray = new byte[cachedSound.Value.AudioData.Length * sizeof(float)];
+        Buffer.BlockCopy(cachedSound.Value.AudioData, 0, byteArray, 0, byteArray.Length);
 
         var memoryStream = new MemoryStream(byteArray);
-        var waveStream = new RawSourceWaveStream(memoryStream, cachedSound.WaveFormat);
+        var waveStream = new RawSourceWaveStream(memoryStream, cachedSound.Value.WaveFormat);
         var loopStream = new LoopStream(waveStream);
         var volumeProvider = new VolumeSampleProvider(loopStream.ToSampleProvider())
         {

@@ -1,28 +1,28 @@
 ﻿using System;
 using NAudio.Wave;
 
-namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave
+namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
+
+internal class CachedSoundSampleProvider : ISampleProvider
 {
-    internal class CachedSoundSampleProvider : ISampleProvider
+    private readonly CachedSound _sourceSound;
+    private int _position;
+
+    public CachedSoundSampleProvider(in CachedSound cachedSound)
     {
-        public CachedSound SourceSound { get; }
-        private long _position;
-
-        public CachedSoundSampleProvider(CachedSound cachedSound)
-        {
-            SourceSound = cachedSound;
-            //Length = cachedSound.Length;
-        }
-
-        public int Read(float[] buffer, int offset, int count)
-        {
-            var availableSamples = SourceSound.AudioData.Length - _position;
-            var samplesToCopy = Math.Min(availableSamples, count);
-            Array.Copy(SourceSound.AudioData, _position, buffer, offset, samplesToCopy);
-            _position += samplesToCopy;
-            return (int)samplesToCopy;
-        }
-
-        public WaveFormat WaveFormat => SourceSound.WaveFormat;
+        _sourceSound = cachedSound;
     }
+
+    public int Read(float[] buffer, int offset, int count)
+    {
+        var availableSamples = _sourceSound.AudioData.Length - _position;
+        var samplesToCopy = Math.Min(availableSamples, count);
+        _sourceSound.AudioData.AsSpan()
+            .Slice(_position, samplesToCopy)
+            .CopyTo(buffer.AsSpan(offset));
+        _position += samplesToCopy;
+        return samplesToCopy;
+    }
+
+    public WaveFormat WaveFormat => _sourceSound.WaveFormat;
 }

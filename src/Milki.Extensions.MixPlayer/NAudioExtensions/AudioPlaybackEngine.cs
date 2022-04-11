@@ -77,28 +77,35 @@ public sealed class AudioPlaybackEngine : IDisposable
     public void AddRootSample(ISampleProvider input)
     {
         if (!RootMixer.MixerInputs.Contains(input))
+        {
             RootMixer.AddMixerInput(input);
+        }
     }
 
     public void RemoveRootSample(ISampleProvider input)
     {
         if (RootMixer.MixerInputs.Contains(input))
+        {
             RootMixer.RemoveMixerInput(input);
+        }
     }
 
     public async Task<ISampleProvider?> PlayRootSound(string path, SampleControl sampleControl)
     {
-        var rootSample = await RootMixer
-                .PlaySound(path, sampleControl)
-            ;
+        var rootSample = await RootMixer.PlaySound(path, sampleControl);
         return rootSample;
     }
 
     public void Dispose()
     {
         if (OutputDevice != null)
+        {
             Context.Send(_ => OutputDevice.Dispose(), null);
+        }
+
         if (Context is IDisposable id)
+        {
             id.Dispose();
+        }
     }
 }

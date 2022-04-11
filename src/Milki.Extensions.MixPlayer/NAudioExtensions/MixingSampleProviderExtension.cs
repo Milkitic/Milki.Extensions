@@ -8,14 +8,14 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions;
 [Fody.ConfigureAwait(false)]
 internal static class MixingSampleProviderExtension
 {
-    internal static ISampleProvider? PlaySound(this MixingSampleProvider mixer, CachedSound? sound,
+    internal static ISampleProvider? PlaySound(this MixingSampleProvider mixer, in CachedSound? sound,
         SampleControl sampleControl)
     {
         PlaySound(mixer, sound, sampleControl, out var rootSample);
         return rootSample;
     }
 
-    internal static ISampleProvider? PlaySound(this MixingSampleProvider mixer, CachedSound? sound,
+    internal static ISampleProvider? PlaySound(this MixingSampleProvider mixer, in CachedSound? sound,
         float volume, float balance)
     {
         PlaySound(mixer, sound, volume, balance, out var rootSample);
@@ -63,7 +63,7 @@ internal static class MixingSampleProviderExtension
         mixer.AddMixerInput(adjustBalance);
     }
 
-    private static void PlaySound(MixingSampleProvider mixer, CachedSound? sound, SampleControl sampleControl,
+    private static void PlaySound(MixingSampleProvider mixer, in CachedSound? sound, SampleControl sampleControl,
         out ISampleProvider? rootSample)
     {
         if (sound == null)
@@ -72,10 +72,10 @@ internal static class MixingSampleProviderExtension
             return;
         }
 
-        mixer.AddMixerInput(new CachedSoundSampleProvider(sound), sampleControl, out rootSample);
+        mixer.AddMixerInput(new CachedSoundSampleProvider(sound.Value), sampleControl, out rootSample);
     }
 
-    private static void PlaySound(MixingSampleProvider mixer, CachedSound? sound, float volume, float balance,
+    private static void PlaySound(MixingSampleProvider mixer, in CachedSound? sound, float volume, float balance,
         out ISampleProvider? rootSample)
     {
         if (sound == null)
@@ -84,7 +84,7 @@ internal static class MixingSampleProviderExtension
             return;
         }
 
-        mixer.AddMixerInput(new CachedSoundSampleProvider(sound), volume, balance, out rootSample);
+        mixer.AddMixerInput(new CachedSoundSampleProvider(sound.Value), volume, balance, out rootSample);
     }
 
     private static VolumeSampleProvider AddToAdjustVolume(this ISampleProvider input, float volume)
