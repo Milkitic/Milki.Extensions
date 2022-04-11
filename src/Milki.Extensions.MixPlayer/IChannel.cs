@@ -14,7 +14,7 @@ namespace Milki.Extensions.MixPlayer
         TimeSpan Duration { get; }
         TimeSpan Position { get; }
         float PlaybackRate { get; }
-        bool UseTempo { get; }
+        bool KeepTune { get; }
         PlayStatus PlayStatus { get; }
 
         Task Initialize();

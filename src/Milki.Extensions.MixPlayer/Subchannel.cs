@@ -20,7 +20,7 @@ public abstract class Subchannel : IChannel
     protected AudioPlaybackEngine Engine { get; }
     public ICollection<Subchannel> ReferencedChannels { get; }
 
-    public SampleControl SampleControl { get; } = new SampleControl();
+    public SampleControl SampleControl { get; } = new();
 
     public Subchannel(AudioPlaybackEngine engine, ICollection<Subchannel>? referencedChannels = null)
     {
@@ -49,7 +49,7 @@ public abstract class Subchannel : IChannel
     }
 
     public abstract float PlaybackRate { get; protected set; }
-    public abstract bool UseTempo { get; protected set; }
+    public abstract bool KeepTune { get; protected set; }
 
     public bool IsReferenced { get; set; }
 
@@ -78,7 +78,7 @@ public abstract class Subchannel : IChannel
 
     public abstract Task Sync(TimeSpan time);
 
-    public abstract Task SetPlaybackRate(float rate, bool useTempo);
+    public abstract Task SetPlaybackRate(float rate, bool keepTune);
 
     public virtual async ValueTask DisposeAsync()
     {

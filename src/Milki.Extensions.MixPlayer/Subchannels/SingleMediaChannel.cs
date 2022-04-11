@@ -43,14 +43,14 @@ public class SingleMediaChannel : Subchannel
     public override TimeSpan ChannelStartTime => TimeSpan.FromMilliseconds(Configuration.Instance.GeneralOffset);
 
     public sealed override float PlaybackRate { get; protected set; }
-    public sealed override bool UseTempo { get; protected set; }
+    public sealed override bool KeepTune { get; protected set; }
 
-    public SingleMediaChannel(AudioPlaybackEngine engine, string path, float playbackRate, bool useTempo) :
-        base(engine)
+    public SingleMediaChannel(AudioPlaybackEngine engine, string path, float playbackRate, bool keepTune) 
+        : base(engine)
     {
         _path = path;
         PlaybackRate = playbackRate;
-        UseTempo = useTempo;
+        KeepTune = keepTune;
     }
 
     public override async Task Initialize()
@@ -59,7 +59,7 @@ public class SingleMediaChannel : Subchannel
 
         _speedProvider = new VariableSpeedSampleProvider(_fileReader,
             10,
-            new SoundTouchProfile(UseTempo, false)
+            new SoundTouchProfile(KeepTune, false)
         )
         {
             PlaybackRate = PlaybackRate
@@ -203,9 +203,9 @@ public class SingleMediaChannel : Subchannel
         await Task.CompletedTask;
     }
 
-    public override async Task SetPlaybackRate(float rate, bool useTempo)
+    public override async Task SetPlaybackRate(float rate, bool keepTune)
     {
-        bool changed = !rate.Equals(PlaybackRate) || useTempo != UseTempo;
+        bool changed = !rate.Equals(PlaybackRate) || keepTune != KeepTune;
         if (!PlaybackRate.Equals(rate))
         {
             PlaybackRate = rate;
@@ -213,10 +213,10 @@ public class SingleMediaChannel : Subchannel
             _sw.Rate = rate;
         }
 
-        if (UseTempo != useTempo)
+        if (KeepTune != keepTune)
         {
-            _speedProvider?.SetSoundTouchProfile(new SoundTouchProfile(useTempo, false));
-            UseTempo = useTempo;
+            _speedProvider?.SetSoundTouchProfile(new SoundTouchProfile(keepTune, false));
+            KeepTune = keepTune;
         }
 
         if (changed) await SkipTo(_sw.Elapsed);

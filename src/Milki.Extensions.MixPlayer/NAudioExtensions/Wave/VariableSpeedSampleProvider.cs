@@ -106,9 +106,9 @@ internal class VariableSpeedSampleProvider : ISampleProvider, IDisposable
     {
         if (_currentSoundTouchProfile != null &&
             !_playbackRate.Equals(1) &&
-            soundTouchProfile.UseTempo != _currentSoundTouchProfile.UseTempo)
+            soundTouchProfile.KeepTune != _currentSoundTouchProfile.KeepTune)
         {
-            if (soundTouchProfile.UseTempo)
+            if (soundTouchProfile.KeepTune)
             {
                 _soundTouch.SetRate(1.0f);
                 _soundTouch.SetPitchOctaves(0f);
@@ -120,7 +120,7 @@ internal class VariableSpeedSampleProvider : ISampleProvider, IDisposable
                 _soundTouch.SetRate(_playbackRate);
             }
         }
-        this._currentSoundTouchProfile = soundTouchProfile;
+        _currentSoundTouchProfile = soundTouchProfile;
         _soundTouch.SetUseAntiAliasing(soundTouchProfile.UseAntiAliasing);
         _soundTouch.SetUseQuickSeek(soundTouchProfile.UseQuickSeek);
     }
@@ -140,7 +140,7 @@ internal class VariableSpeedSampleProvider : ISampleProvider, IDisposable
         if (value.Equals(0)) return;
         if (_currentSoundTouchProfile == null) return;
 
-        if (_currentSoundTouchProfile.UseTempo)
+        if (_currentSoundTouchProfile.KeepTune)
         {
             _soundTouch.SetTempo(value);
         }

@@ -22,7 +22,7 @@ namespace Milki.Extensions.MixPlayer
         private bool _keepTune = false;
         private string _defaultDir = Path.Combine(Environment.CurrentDirectory, "default");
         private string _cacheDir = Path.Combine(Environment.CurrentDirectory, "caching");
-        private string _soundTouchDir = Path.Combine(Environment.CurrentDirectory, "libs", "SoundTouch");
+        private string _soundTouchDir = Path.Combine(Environment.CurrentDirectory, "runtimes");
 
         internal ILogger<T>? GetLogger<T>() => _factory?.CreateLogger<T>();
         internal ILogger? GetLogger(Type category)

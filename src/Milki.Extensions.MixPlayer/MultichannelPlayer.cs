@@ -31,7 +31,7 @@ public abstract class MultichannelPlayer : IChannel
         get => _innerTimelineSw.Rate;
         private set => _innerTimelineSw.Rate = value;
     }
-    public bool UseTempo { get; private set; }
+    public bool KeepTune { get; private set; }
 
     public PlayStatus PlayStatus
     {
@@ -312,17 +312,17 @@ public abstract class MultichannelPlayer : IChannel
         RaisePositionUpdated(_innerTimelineSw.Elapsed, true);
     }
 
-    public async Task SetPlaybackRate(float rate, bool useTempo)
+    public async Task SetPlaybackRate(float rate, bool keepTune)
     {
         foreach (var channel in _subchannels.ToList())
         {
-            await channel.SetPlaybackRate(rate, useTempo);
+            await channel.SetPlaybackRate(rate, keepTune);
         }
 
         PlaybackRate = rate;
-        if (useTempo != UseTempo)
+        if (keepTune != KeepTune)
         {
-            UseTempo = useTempo;
+            KeepTune = keepTune;
             await SkipTo(Position);
         }
     }

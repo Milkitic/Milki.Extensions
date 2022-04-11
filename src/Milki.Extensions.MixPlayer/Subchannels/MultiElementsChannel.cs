@@ -60,7 +60,7 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
     }
     public float BalanceFactor { get; set; } = 0.35f;
 
-    public sealed override bool UseTempo { get; protected set; }
+    public sealed override bool KeepTune { get; protected set; }
 
     public MixingSampleProvider? Submixer { get; protected set; }
 
@@ -207,19 +207,19 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
         await Task.CompletedTask;
     }
 
-    public override async Task SetPlaybackRate(float rate, bool useTempo)
+    public override async Task SetPlaybackRate(float rate, bool keepTune)
     {
         PlaybackRate = rate;
-        UseTempo = useTempo;
+        KeepTune = keepTune;
         AdjustModOffset();
         await Task.CompletedTask;
     }
 
     private void AdjustModOffset()
     {
-        if (Math.Abs(_sw.Rate - 0.75) < 0.001 && !UseTempo)
+        if (Math.Abs(_sw.Rate - 0.75) < 0.001 && !KeepTune)
             _sw.VariableOffset = TimeSpan.FromMilliseconds(-25);
-        else if (Math.Abs(_sw.Rate - 1.5) < 0.001 && UseTempo)
+        else if (Math.Abs(_sw.Rate - 1.5) < 0.001 && KeepTune)
             _sw.VariableOffset = TimeSpan.FromMilliseconds(15);
         else
             _sw.VariableOffset = TimeSpan.Zero;
