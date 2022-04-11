@@ -31,7 +31,7 @@ public sealed class SoundElement
     {
         var cachedSound = await GetCachedSoundAsync(waveFormat);
         if (cachedSound == null) return 0;
-        return cachedSound.Value.Duration.TotalMilliseconds + Offset;
+        return cachedSound.Duration.TotalMilliseconds + Offset;
     }
 
     public static SoundElement Create(double offset, float volume, float balance, string filePath,

@@ -3,12 +3,12 @@ using NAudio.Wave;
 
 namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 
-public readonly struct CachedSound : IEquatable<CachedSound>
+public sealed class CachedSound : IEquatable<CachedSound>
 {
-    public string SourcePath { get; }
-    public float[] AudioData { get; }
-    public WaveFormat WaveFormat { get; }
-    public TimeSpan Duration { get; }
+    public readonly string SourcePath;
+    public readonly float[] AudioData;
+    public readonly TimeSpan Duration;
+    public readonly WaveFormat WaveFormat;
 
     internal CachedSound(string filePath, float[] audioData, TimeSpan duration, WaveFormat waveFormat)
     {
@@ -18,16 +18,14 @@ public readonly struct CachedSound : IEquatable<CachedSound>
         WaveFormat = waveFormat;
     }
 
-    public override bool Equals(object? obj)
-    {
-        if (obj is CachedSound other)
-            return Equals(other);
-        return ReferenceEquals(this, obj);
-    }
-
     public bool Equals(CachedSound other)
     {
         return SourcePath == other.SourcePath;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is CachedSound other && Equals(other);
     }
 
     public override int GetHashCode()

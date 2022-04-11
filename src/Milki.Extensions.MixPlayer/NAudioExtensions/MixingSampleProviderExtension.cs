@@ -72,7 +72,7 @@ internal static class MixingSampleProviderExtension
             return;
         }
 
-        mixer.AddMixerInput(new CachedSoundSampleProvider(sound.Value), sampleControl, out rootSample);
+        mixer.AddMixerInput(new CachedSoundSampleProvider(sound), sampleControl, out rootSample);
     }
 
     private static void PlaySound(MixingSampleProvider mixer, in CachedSound? sound, float volume, float balance,
@@ -84,7 +84,7 @@ internal static class MixingSampleProviderExtension
             return;
         }
 
-        mixer.AddMixerInput(new CachedSoundSampleProvider(sound.Value), volume, balance, out rootSample);
+        mixer.AddMixerInput(new CachedSoundSampleProvider(sound), volume, balance, out rootSample);
     }
 
     private static VolumeSampleProvider AddToAdjustVolume(this ISampleProvider input, float volume)
