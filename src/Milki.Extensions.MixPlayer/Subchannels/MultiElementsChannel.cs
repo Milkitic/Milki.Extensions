@@ -98,12 +98,11 @@ namespace Milki.Extensions.MixPlayer.Subchannels
 
             await Stop();
 
-            SampleControl.Volume = 1;
-            SampleControl.Balance = 0;
             SampleControl.VolumeChanged = f =>
             {
                 if (_volumeProvider != null) _volumeProvider.Volume = f;
             };
+            if (_volumeProvider != null) _volumeProvider.Volume = Volume;
 
             await RequeueAsync(TimeSpan.Zero).ConfigureAwait(false);
             var elements = SoundElements ?? new List<SoundElement>();
