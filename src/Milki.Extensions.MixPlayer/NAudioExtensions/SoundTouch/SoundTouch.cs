@@ -17,7 +17,10 @@ internal class SoundTouch : IDisposable
             throw new PlatformNotSupportedException("Platform not support for SoundTouch: " + os.VersionString);
         }
 
-        AddEnvironmentPaths(libDir, is64Bit ? Path.Combine(libDir, "win-x64") : Path.Combine(libDir, "win-x86"));
+        AddEnvironmentPaths(libDir, is64Bit
+            ? Path.Combine(libDir, "win-x64", "SoundTouch")
+            : Path.Combine(libDir, "win-x86", "SoundTouch")
+        );
     }
 
     private IntPtr _handle;
