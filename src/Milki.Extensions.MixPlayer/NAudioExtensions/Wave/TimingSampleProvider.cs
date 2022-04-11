@@ -7,15 +7,17 @@ public class TimingSampleProvider : ISampleProvider
 {
     public delegate void TimingChangedEvent(TimeSpan oldTimestamp, TimeSpan newTimestamp);
 
-    private readonly ISampleProvider _sourceProvider;
-    public TimeSpan CurrentTime { get; private set; } = TimeSpan.Zero;
-
     public event TimingChangedEvent? Updated;
+
+    private readonly ISampleProvider _sourceProvider;
 
     public TimingSampleProvider(ISampleProvider sourceProvider)
     {
         _sourceProvider = sourceProvider;
     }
+
+    public WaveFormat WaveFormat => _sourceProvider.WaveFormat;
+    public TimeSpan CurrentTime { get; private set; } = TimeSpan.Zero;
 
     public int Read(float[] buffer, int offset, int count)
     {
@@ -23,11 +25,12 @@ public class TimingSampleProvider : ISampleProvider
         var oldTime = CurrentTime;
         CurrentTime += SamplesToTimeSpan(samplesRead);
         if (oldTime != CurrentTime)
+        {
             Updated?.Invoke(oldTime, CurrentTime);
+        }
+
         return samplesRead;
     }
-
-    public WaveFormat WaveFormat => _sourceProvider.WaveFormat;
 
     private int TimeSpanToSamples(TimeSpan time)
     {
@@ -37,6 +40,13 @@ public class TimingSampleProvider : ISampleProvider
 
     private TimeSpan SamplesToTimeSpan(int samples)
     {
-        return TimeSpan.FromSeconds((samples / WaveFormat.Channels) / (double)WaveFormat.SampleRate);
+        return WaveFormat.Channels switch
+        {
+            1 => TimeSpan.FromSeconds((samples) / (double)WaveFormat.SampleRate),
+            2 => TimeSpan.FromSeconds((samples >> 1) / (double)WaveFormat.SampleRate),
+            4 => TimeSpan.FromSeconds((samples >> 2) / (double)WaveFormat.SampleRate),
+            8 => TimeSpan.FromSeconds((samples >> 3) / (double)WaveFormat.SampleRate),
+            _ => TimeSpan.FromSeconds((samples / WaveFormat.Channels) / (double)WaveFormat.SampleRate)
+        };
     }
 }

@@ -2,9 +2,9 @@
 
 namespace Milki.Extensions.MixPlayer.Subchannels
 {
-    public class SoundElementTimingComparer : IComparer<SoundElement>
+    public sealed class SoundElementTimingComparer : IComparer<SoundElement>
     {
-        public int Compare(SoundElement x, SoundElement y)
+        public int Compare(SoundElement? x, SoundElement? y)
         {
             if (x is null || y is null)
             {
@@ -12,6 +12,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels
                 else
                     return 1;
             }
+
             return x.Offset.CompareTo(y.Offset);
         }
     }

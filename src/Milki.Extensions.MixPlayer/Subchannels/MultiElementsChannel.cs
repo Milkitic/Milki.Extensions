@@ -17,7 +17,7 @@ namespace Milki.Extensions.MixPlayer.Subchannels;
 public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
 {
     private static readonly ILogger? Logger = Configuration.Instance.GetCurrentClassLogger();
-    private readonly VariableStopwatch _sw = new VariableStopwatch();
+    private readonly VariableStopwatch _sw = new();
 
     protected List<SoundElement>? SoundElements;
     public IReadOnlyCollection<SoundElement>? SoundElementCollection =>
@@ -26,16 +26,14 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
     private ConcurrentQueue<SoundElement>? _soundElementsQueue;
 
     private VolumeSampleProvider? _volumeProvider;
-    private bool _isVolumeEnabled = false;
 
     private Task? _playingTask;
     //private Task _calibrationTask;
     private CancellationTokenSource? _cts;
     private readonly object _skipLock = new object();
 
-    private readonly LoopProviders _loopProviders = new LoopProviders();
-
-    private float _playbackRate;
+    private readonly LoopProviders _loopProviders = new();
+    
     private readonly MixSettings _mixSettings;
 
     public bool IsPlayRunning => _playingTask != null &&
@@ -92,7 +90,6 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
                 ReadFully = true
             };
             _volumeProvider = new VolumeSampleProvider(Submixer);
-            _isVolumeEnabled = true;
             Engine.AddRootSample(_volumeProvider);
         }
 
@@ -276,17 +273,19 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
 
             try
             {
-                switch (soundElement.ControlType)
+                switch (soundElement.SoundNode)
                 {
-                    case SlideControlType.None:
+                    case SoundNode.None:
                         var cachedSound = await soundElement.GetCachedSoundAsync(Submixer!.WaveFormat);
-                        var flag = Submixer.PlaySound(cachedSound, soundElement.Volume,
+                        var relatedProvider = Submixer.PlaySound(cachedSound, soundElement.Volume,
                             soundElement.Balance * BalanceFactor);
                         if (soundElement.SubSoundElement != null)
-                            soundElement.SubSoundElement.RelatedProvider = flag;
+                        {
+                            soundElement.SubSoundElement.RelatedProvider = relatedProvider;
+                        }
 
                         break;
-                    case SlideControlType.StopNote:
+                    case SoundNode.ForceStop:
                         if (soundElement.RelatedProvider != null)
                         {
                             if (_mixSettings.ForceStopFadeoutDuration > 0)
@@ -303,7 +302,7 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
                         }
 
                         break;
-                    case SlideControlType.StartNew:
+                    case SoundNode.StartLoop:
                         if (_mixSettings.ForceMode &&
                             soundElement.LoopChannel != null &&
                             _loopProviders.ShouldRemoveAll(soundElement.LoopChannel.Value))
@@ -313,13 +312,13 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
 
                         await _loopProviders.CreateAsync(soundElement, Submixer!, BalanceFactor);
                         break;
-                    case SlideControlType.StopRunning:
+                    case SoundNode.StopLoop:
                         _loopProviders.Remove(soundElement.LoopChannel, Submixer);
                         break;
-                    case SlideControlType.ChangeBalance:
+                    case SoundNode.ChangeBalance:
                         _loopProviders.ChangeAllBalances(soundElement.Balance * BalanceFactor);
                         break;
-                    case SlideControlType.ChangeVolume:
+                    case SoundNode.ChangeVolume:
                         _loopProviders.ChangeAllVolumes(soundElement.Volume);
                         break;
                 }
@@ -327,7 +326,7 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
             catch (Exception ex)
             {
                 Logger?.LogError(ex, "Error while playing target element. Source: {0}; {1}",
-                    soundElement.FilePath, soundElement.ControlType);
+                    soundElement.FilePath, soundElement.SoundNode);
             }
         }
     }

@@ -56,8 +56,8 @@ internal static class MixingSampleProviderExtension
     public static void AddMixerInput(this MixingSampleProvider mixer, ISampleProvider input,
         float volume, float balance, out ISampleProvider rootSample)
     {
-        var adjustVolume = input.AddToAdjustVolume(volume);
-        var adjustBalance = adjustVolume.AddToBalanceProvider(balance);
+        var adjustVolume = volume >= 1 ? input : input.AddToAdjustVolume(volume);
+        var adjustBalance = balance == 0 ? adjustVolume : adjustVolume.AddToBalanceProvider(balance);
 
         rootSample = adjustBalance;
         mixer.AddMixerInput(adjustBalance);

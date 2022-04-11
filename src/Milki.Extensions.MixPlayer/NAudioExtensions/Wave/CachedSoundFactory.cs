@@ -102,6 +102,14 @@ public static class CachedSoundFactory
             int offset = 0;
             while ((samplesRead = audioFileReader.Read(readBuffer, 0, length)) > 0)
             {
+                var read = offset + samplesRead;
+                if (wholeData.Length < read)
+                {
+                    var realloc = new float[read];
+                    wholeData.CopyTo(realloc, 0);
+                    wholeData = realloc;
+                }
+
                 readBuffer.AsSpan(0, samplesRead).CopyTo(wholeData.AsSpan(offset, samplesRead));
                 offset += samplesRead;
             }

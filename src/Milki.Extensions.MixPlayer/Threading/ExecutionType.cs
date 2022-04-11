@@ -1,8 +1,7 @@
-﻿namespace Milki.Extensions.MixPlayer.Threading
+﻿namespace Milki.Extensions.MixPlayer.Threading;
+
+internal enum ExecutionType
 {
-    internal enum ExecutionType
-    {
-        Post,
-        Send
-    }
+    Post,
+    Send
 }

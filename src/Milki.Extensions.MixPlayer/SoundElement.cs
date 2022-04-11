@@ -18,12 +18,15 @@ public sealed class SoundElement
     public string? FilePath { get; private set; }
 
     public double Offset { get; private set; }
-
     public float Volume { get; private set; }
     public float Balance { get; private set; }
+
     public PlaybackType PlaybackType { get; private set; }
     public int? LoopChannel { get; private set; }
-    public SlideControlType ControlType { get; private set; } = SlideControlType.None;
+    public SoundNode SoundNode { get; private set; } = SoundNode.None;
+
+    internal ISampleProvider? RelatedProvider { get; set; }
+    internal SoundElement? SubSoundElement { get; private set; }
 
     public bool HasSound => FilePath != null;
 
@@ -62,7 +65,7 @@ public sealed class SoundElement
             Volume = volume,
             Balance = balance,
             FilePath = filePath,
-            ControlType = SlideControlType.StartNew,
+            SoundNode = SoundNode.StartLoop,
             PlaybackType = PlaybackType.Loop,
             LoopChannel = loopChannel
         };
@@ -73,7 +76,7 @@ public sealed class SoundElement
         return new SoundElement
         {
             Offset = offset,
-            ControlType = SlideControlType.StopRunning,
+            SoundNode = SoundNode.StopLoop,
             LoopChannel = loopChannel,
         };
     }
@@ -84,7 +87,7 @@ public sealed class SoundElement
         {
             Offset = offset,
             Volume = volume,
-            ControlType = SlideControlType.ChangeVolume
+            SoundNode = SoundNode.ChangeVolume
         };
     }
 
@@ -94,7 +97,7 @@ public sealed class SoundElement
         {
             Offset = offset,
             Balance = balance,
-            ControlType = SlideControlType.ChangeBalance
+            SoundNode = SoundNode.ChangeBalance
         };
     }
 
@@ -103,14 +106,11 @@ public sealed class SoundElement
         var se = new SoundElement
         {
             Offset = offset,
-            ControlType = SlideControlType.StopNote
+            SoundNode = SoundNode.ForceStop
         };
 
         return se;
     }
-
-    internal ISampleProvider? RelatedProvider { get; set; }
-    internal SoundElement? SubSoundElement { get; private set; }
 
     internal async Task<CachedSound?> GetCachedSoundAsync(WaveFormat waveFormat)
     {

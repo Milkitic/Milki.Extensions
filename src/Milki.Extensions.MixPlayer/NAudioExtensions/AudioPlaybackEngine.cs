@@ -16,10 +16,10 @@ public sealed class AudioPlaybackEngine : IDisposable
     public delegate void PlaybackTimingChangedEvent(AudioPlaybackEngine sender, TimeSpan oldTimestamp, TimeSpan newTimestamp);
 
     public event PlaybackTimingChangedEvent? Updated;
-        
+
     private readonly VolumeSampleProvider _volumeProvider;
     private readonly TimingSampleProvider _timingProvider;
-        
+
     public AudioPlaybackEngine(int sampleRate = 44100, int channelCount = 2)
     {
         Context = SynchronizationContext.Current ??

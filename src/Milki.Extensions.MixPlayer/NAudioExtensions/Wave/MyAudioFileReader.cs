@@ -35,7 +35,7 @@ public class MyAudioFileReader : WaveStream, ISampleProvider
         _lockObject = new object();
         FileName = fileName;
         CreateReaderStream(fileName);
-        _sourceBytesPerSample = _readerStream.WaveFormat.BitsPerSample / 8 * _readerStream.WaveFormat.Channels;
+        _sourceBytesPerSample = (_readerStream.WaveFormat.BitsPerSample / 8) * _readerStream.WaveFormat.Channels;
         _sampleChannel = new NAudio.Wave.SampleProviders.SampleChannel(_readerStream, false);
         _destBytesPerSample = 4 * _sampleChannel.WaveFormat.Channels;
         _length = SourceToDest(_readerStream.Length);
@@ -46,7 +46,7 @@ public class MyAudioFileReader : WaveStream, ISampleProvider
         _lockObject = new object();
         CreateReaderStream(stream, waveType);
 
-        _sourceBytesPerSample = _readerStream.WaveFormat.BitsPerSample / 8 * _readerStream.WaveFormat.Channels;
+        _sourceBytesPerSample = (_readerStream.WaveFormat.BitsPerSample / 8) * _readerStream.WaveFormat.Channels;
         _sampleChannel = new NAudio.Wave.SampleProviders.SampleChannel(_readerStream, false);
         _destBytesPerSample = 4 * _sampleChannel.WaveFormat.Channels;
         _length = SourceToDest(_readerStream.Length);
@@ -67,15 +67,15 @@ public class MyAudioFileReader : WaveStream, ISampleProvider
         switch (waveType)
         {
             case WaveType.Wav:
-            {
-                _readerStream = new WaveFileReader(sourceStream);
-                if (_readerStream.WaveFormat.Encoding == WaveFormatEncoding.Pcm ||
-                    _readerStream.WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
-                    return;
-                _readerStream = WaveFormatConversionStream.CreatePcmStream(_readerStream);
-                _readerStream = new BlockAlignReductionStream(_readerStream);
-                break;
-            }
+                {
+                    _readerStream = new WaveFileReader(sourceStream);
+                    if (_readerStream.WaveFormat.Encoding == WaveFormatEncoding.Pcm ||
+                        _readerStream.WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
+                        return;
+                    _readerStream = WaveFormatConversionStream.CreatePcmStream(_readerStream);
+                    _readerStream = new BlockAlignReductionStream(_readerStream);
+                    break;
+                }
             case WaveType.Mp3:
                 _readerStream = new Mp3FileReader(sourceStream);
                 break;
@@ -100,19 +100,24 @@ public class MyAudioFileReader : WaveStream, ISampleProvider
         if (fileName.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
         {
             _readerStream = new WaveFileReader(fileName);
-            if (_readerStream.WaveFormat.Encoding == WaveFormatEncoding.Pcm ||
-                _readerStream.WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
+            if (_readerStream.WaveFormat.Encoding is WaveFormatEncoding.Pcm or WaveFormatEncoding.IeeeFloat)
                 return;
             _readerStream = WaveFormatConversionStream.CreatePcmStream(_readerStream);
             _readerStream = new BlockAlignReductionStream(_readerStream);
         }
         else if (fileName.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
+        {
             _readerStream = new Mp3FileReader(fileName);
+        }
         else if (fileName.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase))
+        {
             _readerStream = new VorbisWaveReader(fileName);
+        }
         else if (fileName.EndsWith(".aiff", StringComparison.OrdinalIgnoreCase) ||
                  fileName.EndsWith(".aif", StringComparison.OrdinalIgnoreCase))
+        {
             _readerStream = new AiffFileReader(fileName);
+        }
         else
         {
             // fall back to media foundation reader, see if that can play it
@@ -162,9 +167,9 @@ public class MyAudioFileReader : WaveStream, ISampleProvider
     /// <returns>Number of bytes read</returns>
     public override int Read(byte[] buffer, int offset, int count)
     {
-        WaveBuffer waveBuffer = new WaveBuffer(buffer);
-        int samplesRequired = count / 4;
-        return Read(waveBuffer.FloatBuffer, offset / 4, samplesRequired) * 4;
+        var waveBuffer = new WaveBuffer(buffer);
+        int samplesRequired = count >> 2;
+        return Read(waveBuffer.FloatBuffer, offset >> 2, samplesRequired) << 2;
     }
 
     /// <summary>
@@ -187,7 +192,14 @@ public class MyAudioFileReader : WaveStream, ISampleProvider
     /// </summary>
     private long SourceToDest(long sourceBytes)
     {
-        return _destBytesPerSample * (sourceBytes / _sourceBytesPerSample);
+        return _sourceBytesPerSample switch
+        {
+            1 => _destBytesPerSample * (sourceBytes),
+            2 => _destBytesPerSample * (sourceBytes >> 1),
+            4 => _destBytesPerSample * (sourceBytes >> 2),
+            8 => _destBytesPerSample * (sourceBytes >> 3),
+            _ => _destBytesPerSample * (sourceBytes / _sourceBytesPerSample)
+        };
     }
 
     /// <summary>
@@ -195,7 +207,14 @@ public class MyAudioFileReader : WaveStream, ISampleProvider
     /// </summary>
     private long DestToSource(long destBytes)
     {
-        return _sourceBytesPerSample * (destBytes / _destBytesPerSample);
+        return _destBytesPerSample switch
+        {
+            1 => _sourceBytesPerSample * (destBytes),
+            2 => _sourceBytesPerSample * (destBytes >> 1),
+            4 => _sourceBytesPerSample * (destBytes >> 2),
+            8 => _sourceBytesPerSample * (destBytes >> 3),
+            _ => _sourceBytesPerSample * (destBytes / _destBytesPerSample)
+        };
     }
 
     /// <summary>
@@ -208,7 +227,6 @@ public class MyAudioFileReader : WaveStream, ISampleProvider
         {
             _readerStream.Dispose();
             _readerStream = null;
-            if (FileName?.EndsWith(".sound") == true) Task.Run(() => File.Delete(FileName));
         }
         base.Dispose(disposing);
     }

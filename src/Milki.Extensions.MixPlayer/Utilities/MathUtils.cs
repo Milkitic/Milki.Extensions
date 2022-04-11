@@ -1,25 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 namespace Milki.Extensions.MixPlayer.Utilities;
 
 public static class MathUtils
 {
-    public static T Max<T>(params T[] values) where T : struct, IComparable
+    public static T Max<T>(params T[] values)
     {
-        return Max(values.AsEnumerable());
+        return values.Max();
+        //return Max(values.AsEnumerable());
     }
 
-    public static T Max<T>(IEnumerable<T> values) where T : struct, IComparable
+    public static T Max<T>(IEnumerable<T> values)
     {
-        var def = default(T);
+        return values.Max();
+        //var def = default(T);
 
-        foreach (var value in values)
-        {
-            if (Equals(def, default(T)) || def.CompareTo(value) < 0) def = value;
-        }
+        //foreach (var value in values)
+        //{
+        //    if (Equals(def, default(T)) || def.CompareTo(value) < 0) def = value;
+        //}
 
-        return def;
+        //return def;
     }
 }
