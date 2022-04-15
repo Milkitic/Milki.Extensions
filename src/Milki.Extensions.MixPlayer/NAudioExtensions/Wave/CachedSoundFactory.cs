@@ -11,7 +11,6 @@ using NAudio.Wave;
 
 namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 
-[Fody.ConfigureAwait(false)]
 public static class CachedSoundFactory
 {
     private static readonly ILogger? Logger = Configuration.Instance.GetCurrentClassLogger();
@@ -58,7 +57,7 @@ public static class CachedSoundFactory
         CachedSound cachedSound;
         try
         {
-            cachedSound = await CreateCacheFromFile(waveFormat, path);
+            cachedSound = await CreateCacheFromFile(waveFormat, path).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -89,7 +88,7 @@ public static class CachedSoundFactory
 
     private static async Task<CachedSound> CreateCacheFromFile(WaveFormat waveFormat, string filePath)
     {
-        using var audioFileReader = await ResampleHelper.GetResampledAudioFileReader(filePath, WavType, waveFormat);
+        using var audioFileReader = await ResampleHelper.GetResampledAudioFileReader(filePath, WavType, waveFormat).ConfigureAwait(false);
         var sw = Stopwatch.StartNew();
         var wholeData = new float[(int)(audioFileReader.Length / 4)];
         var actualWaveFormat = audioFileReader.WaveFormat;

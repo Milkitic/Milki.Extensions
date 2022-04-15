@@ -13,7 +13,6 @@ using NAudio.Wave.SampleProviders;
 
 namespace Milki.Extensions.MixPlayer.Subchannels;
 
-[Fody.ConfigureAwait(false)]
 public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
 {
     private static readonly ILogger? Logger = Configuration.Instance.GetCurrentClassLogger();
@@ -93,7 +92,7 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
             Engine.AddRootSample(_volumeProvider);
         }
 
-        await Stop();
+        await Stop().ConfigureAwait(false);
 
         SampleControl.VolumeChanged = f =>
         {
@@ -101,7 +100,7 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
         };
         if (_volumeProvider != null) _volumeProvider.Volume = Volume;
 
-        await RequeueAsync(TimeSpan.Zero);
+        await RequeueAsync(TimeSpan.Zero).ConfigureAwait(false);
         var elements = SoundElements ?? new List<SoundElement>();
 
         //var ordered = soundElements.OrderBy(k => k.Offset).ToArray();
@@ -109,7 +108,7 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
             .Skip(elements.Count > 9 ? elements.Count - 9 : elements.Count)
             .AsParallel()
             .Select(async k => (k, await k.GetNearEndTimeAsync(Engine.FileWaveFormat)));
-        await Task.WhenAll(lasts);
+        await Task.WhenAll(lasts).ConfigureAwait(false);
         var last9Elements = lasts.Select(k => k.Result).ToArray();
 
         var max = TimeSpan.FromMilliseconds(last9Elements.Length == 0
@@ -134,7 +133,7 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
         //    .Select(k => k.FilePath));
 
         var configuration = Configuration.Instance;
-        await SetPlaybackRate(configuration.PlaybackRate, configuration.KeepTune);
+        await SetPlaybackRate(configuration.PlaybackRate, configuration.KeepTune).ConfigureAwait(false);
         PlayStatus = PlayStatus.Ready;
     }
 
@@ -142,7 +141,7 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
     {
         if (PlayStatus == PlayStatus.Playing) return;
 
-        await ReadyLoopAsync();
+        await ReadyLoopAsync().ConfigureAwait(false);
 
         StartPlayTask();
         RaisePositionUpdated(_sw.Elapsed, true);
@@ -154,7 +153,7 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
     {
         if (PlayStatus == PlayStatus.Paused) return;
 
-        await CancelLoopAsync();
+        await CancelLoopAsync().ConfigureAwait(false);
 
         RaisePositionUpdated(_sw.Elapsed, true);
         PlayStatus = PlayStatus.Paused;
@@ -165,8 +164,8 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
         if (PlayStatus is PlayStatus.Paused or PlayStatus.Ready or PlayStatus.Unknown &&
             Position == TimeSpan.Zero) return;
 
-        await CancelLoopAsync();
-        await SkipTo(TimeSpan.Zero);
+        await CancelLoopAsync().ConfigureAwait(false);
+        await SkipTo(TimeSpan.Zero).ConfigureAwait(false);
         PlayStatus = PlayStatus.Paused;
     }
 
@@ -174,8 +173,8 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
     {
         if (Position == TimeSpan.Zero) return;
 
-        await SkipTo(TimeSpan.Zero);
-        await Play();
+        await SkipTo(TimeSpan.Zero).ConfigureAwait(false);
+        await Play().ConfigureAwait(false);
     }
 
     public override async Task SkipTo(TimeSpan time)
@@ -197,7 +196,7 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
 
                 PlayStatus = status;
             }
-        });
+        }).ConfigureAwait(false);
         RaisePositionUpdated(_sw.Elapsed, true);
     }
 
@@ -246,7 +245,7 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
                     // wow nothing here
                 }
 
-                await SelectElements((int)_sw.ElapsedMilliseconds);
+                await SelectElements((int)_sw.ElapsedMilliseconds).ConfigureAwait(false);
 
                 if (!TaskEx.TaskSleep(1, _cts)) break;
             }
@@ -254,7 +253,7 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
             if (!_cts!.Token.IsCancellationRequested)
             {
                 PlayStatus = PlayStatus.Finished;
-                await SkipTo(TimeSpan.Zero);
+                await SkipTo(TimeSpan.Zero).ConfigureAwait(false);
             }
         }, TaskCreationOptions.LongRunning);
         _playingTask.Start();
@@ -276,7 +275,7 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
                 switch (soundElement.SoundNode)
                 {
                     case SoundNode.None:
-                        var cachedSound = await soundElement.GetCachedSoundAsync(Submixer!.WaveFormat);
+                        var cachedSound = await soundElement.GetCachedSoundAsync(Submixer!.WaveFormat).ConfigureAwait(false);
                         var relatedProvider = Submixer.PlaySound(cachedSound, soundElement.Volume,
                             soundElement.Balance * BalanceFactor);
                         if (soundElement.SubSoundElement != null)
@@ -310,7 +309,7 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
                             _loopProviders.RemoveAll(Submixer);
                         }
 
-                        await _loopProviders.CreateAsync(soundElement, Submixer!, BalanceFactor);
+                        await _loopProviders.CreateAsync(soundElement, Submixer!, BalanceFactor).ConfigureAwait(false);
                         break;
                     case SoundNode.StopLoop:
                         _loopProviders.Remove(soundElement.LoopChannel, Submixer);
@@ -336,7 +335,7 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
         var queue = new ConcurrentQueue<SoundElement>();
         if (SoundElements == null)
         {
-            var elements = new List<SoundElement>(await GetSoundElements());
+            var elements = new List<SoundElement>(await GetSoundElements().ConfigureAwait(false));
             var subElements = elements
                 .Where(k => k.SubSoundElement != null)
                 .Select(k => k.SubSoundElement!)
@@ -355,7 +354,7 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
                     continue;
                 queue.Enqueue(i);
             }
-        });
+        }).ConfigureAwait(false);
 
         _soundElementsQueue = queue;
     }
@@ -378,7 +377,7 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
         {
         }
 
-        await TaskEx.WhenAllSkipNull(_playingTask/*, _calibrationTask*/);
+        await TaskEx.WhenAllSkipNull(_playingTask/*, _calibrationTask*/).ConfigureAwait(false);
         Logger?.LogDebug(@"{0} task canceled.", Description);
     }
 
@@ -386,7 +385,7 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
 
     public override async ValueTask DisposeAsync()
     {
-        await Stop();
+        await Stop().ConfigureAwait(false);
         Logger?.LogDebug($"Disposing: Stopped.");
 
         _loopProviders.RemoveAll(Submixer);

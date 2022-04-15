@@ -8,7 +8,6 @@ using NAudio.Lame;
 
 namespace Milki.Extensions.MixPlayer.Exporters;
 
-[Fody.ConfigureAwait(false)]
 public class Mp3Exporter : ExporterBase
 {
     public Mp3Exporter(MultiElementsChannel channel, AudioPlaybackEngine engine)
@@ -23,7 +22,7 @@ public class Mp3Exporter : ExporterBase
 
     public override async Task ExportAsync(string filepath, Action<double>? progressCallback = null)
     {
-        await ExportAsync(filepath, 320000, null, progressCallback);
+        await ExportAsync(filepath, 320000, null, progressCallback).ConfigureAwait(false);
     }
 
     public async Task ExportAsync(string filepath, int bitRate = 320000, ID3TagData? id3 = null,
@@ -33,9 +32,9 @@ public class Mp3Exporter : ExporterBase
         using Stream writer = new LameMP3FileWriter(outStream, WaveFormat, bitRate / 1000, id3);
         await ExportCoreAsync(async (bytes, offset, count) =>
         {
-            await writer.WriteAsync(bytes, offset, count);
-        }, d => progressCallback?.Invoke(d));
+            await writer.WriteAsync(bytes, offset, count).ConfigureAwait(false);
+        }, d => progressCallback?.Invoke(d)).ConfigureAwait(false);
 
-        await outStream.FlushAsync();
+        await outStream.FlushAsync().ConfigureAwait(false);
     }
 }

@@ -5,7 +5,6 @@ using NAudio.Wave;
 
 namespace Milki.Extensions.MixPlayer;
 
-[Fody.ConfigureAwait(false)]
 public sealed class SoundElement
 {
     private CachedSound? _cachedSound;
@@ -32,7 +31,7 @@ public sealed class SoundElement
 
     public async Task<double> GetNearEndTimeAsync(WaveFormat waveFormat)
     {
-        var cachedSound = await GetCachedSoundAsync(waveFormat);
+        var cachedSound = await GetCachedSoundAsync(waveFormat).ConfigureAwait(false);
         if (cachedSound == null) return 0;
         return cachedSound.Duration.TotalMilliseconds + Offset;
     }
@@ -120,7 +119,7 @@ public sealed class SoundElement
         if (FilePath == null)
             return null;
 
-        var result = await CachedSoundFactory.GetOrCreateCacheSound(waveFormat, FilePath);
+        var result = await CachedSoundFactory.GetOrCreateCacheSound(waveFormat, FilePath).ConfigureAwait(false);
         _cachedSound = result;
         return result;
     }

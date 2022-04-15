@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 
 namespace Milki.Extensions.MixPlayer.Utilities;
 
-[Fody.ConfigureAwait(false)]
 public static class TaskEx
 {
     public static bool TaskSleep(int milliseconds, CancellationTokenSource? cts = null)
@@ -33,7 +32,7 @@ public static class TaskEx
 
     public static async Task WhenAllSkipNull(params Task?[] playingTask)
     {
-        await Task.WhenAll(playingTask.Where(k => !(k is null)));
+        await Task.WhenAll(playingTask.Where(k => !(k is null))).ConfigureAwait(false);
     }
 
     public static void WaitAllSkipNull(params Task[] playingTask)

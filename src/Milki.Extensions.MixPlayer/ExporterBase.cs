@@ -8,7 +8,6 @@ using NAudio.Wave;
 
 namespace Milki.Extensions.MixPlayer;
 
-[Fody.ConfigureAwait(false)]
 public abstract class ExporterBase
 {
     private readonly ICollection<MultiElementsChannel> _channels;
@@ -38,7 +37,7 @@ public abstract class ExporterBase
 
         foreach (var subchannel in _channels)
         {
-            await subchannel.Initialize();
+            await subchannel.Initialize().ConfigureAwait(false);
         }
 
         var maxEndTime = _channels.Count == 0 ? TimeSpan.Zero : _channels.Max(k => k.ChannelEndTime);
@@ -85,7 +84,7 @@ public abstract class ExporterBase
         {
             int count = _sourceProvider.Read(buffer, 0, buffer.Length);
             if (count != 0)
-                await dataProcessed(buffer, 0, count);
+                await dataProcessed(buffer, 0, count).ConfigureAwait(false);
             else
                 break;
         }

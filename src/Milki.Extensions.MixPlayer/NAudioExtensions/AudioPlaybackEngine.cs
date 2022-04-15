@@ -10,7 +10,6 @@ using NAudio.Wave.SampleProviders;
 
 namespace Milki.Extensions.MixPlayer.NAudioExtensions;
 
-[Fody.ConfigureAwait(false)]
 public sealed class AudioPlaybackEngine : IDisposable
 {
     public delegate void PlaybackTimingChangedEvent(AudioPlaybackEngine sender, TimeSpan oldTimestamp, TimeSpan newTimestamp);
@@ -92,7 +91,7 @@ public sealed class AudioPlaybackEngine : IDisposable
 
     public async Task<ISampleProvider?> PlayRootSound(string path, SampleControl sampleControl)
     {
-        var rootSample = await RootMixer.PlaySound(path, sampleControl);
+        var rootSample = await RootMixer.PlaySound(path, sampleControl).ConfigureAwait(false);
         return rootSample;
     }
 

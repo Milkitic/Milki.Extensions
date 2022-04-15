@@ -12,7 +12,6 @@ using NAudio.Wave;
 
 namespace Milki.Extensions.MixPlayer.Subchannels;
 
-[Fody.ConfigureAwait(false)]
 public class SingleMediaChannel : Subchannel
 {
     private readonly string _path;
@@ -55,7 +54,7 @@ public class SingleMediaChannel : Subchannel
 
     public override async Task Initialize()
     {
-        _fileReader = await ResampleHelper.GetResampledAudioFileReader(_path, WaveType.Wav, Engine.FileWaveFormat);
+        _fileReader = await ResampleHelper.GetResampledAudioFileReader(_path, WaveType.Wav, Engine.FileWaveFormat).ConfigureAwait(false);
 
         _speedProvider = new VariableSpeedSampleProvider(_fileReader,
             10,
@@ -146,7 +145,7 @@ public class SingleMediaChannel : Subchannel
 
         Engine.RootMixer.RemoveMixerInput(_actualRoot);
         Logger?.LogDebug("{0} will skip.", Description);
-        await SkipTo(TimeSpan.Zero);
+        await SkipTo(TimeSpan.Zero).ConfigureAwait(false);
         PlayStatus = PlayStatus.Paused;
         _sw.Reset();
         await Task.CompletedTask;
@@ -156,8 +155,8 @@ public class SingleMediaChannel : Subchannel
     {
         if (Position == TimeSpan.Zero) return;
 
-        await SkipTo(TimeSpan.Zero);
-        await Play();
+        await SkipTo(TimeSpan.Zero).ConfigureAwait(false);
+        await Play().ConfigureAwait(false);
         _sw.Restart();
         await Task.CompletedTask;
     }
@@ -219,7 +218,7 @@ public class SingleMediaChannel : Subchannel
             KeepTune = keepTune;
         }
 
-        if (changed) await SkipTo(_sw.Elapsed);
+        if (changed) await SkipTo(_sw.Elapsed).ConfigureAwait(false);
         await Task.CompletedTask;
     }
 
@@ -235,11 +234,11 @@ public class SingleMediaChannel : Subchannel
 
         Logger?.LogDebug($"Disposing: Canceled {nameof(_cts)}.");
         if (_backoffTask != null)
-            await _backoffTask;
+            await _backoffTask.ConfigureAwait(false);
         Logger?.LogDebug($"Disposing: Stopped task {nameof(_backoffTask)}.");
         _cts.Dispose();
         Logger?.LogDebug($"Disposing: Disposed {nameof(_cts)}.");
-        await Stop();
+        await Stop().ConfigureAwait(false);
         Logger?.LogDebug($"Disposing: Stopped.");
         //await base.DisposeAsync();
         //Logger.Debug($"Disposing: Disposed base.");

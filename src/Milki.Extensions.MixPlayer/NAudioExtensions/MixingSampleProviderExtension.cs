@@ -5,7 +5,6 @@ using NAudio.Wave.SampleProviders;
 
 namespace Milki.Extensions.MixPlayer.NAudioExtensions;
 
-[Fody.ConfigureAwait(false)]
 internal static class MixingSampleProviderExtension
 {
     internal static ISampleProvider? PlaySound(this MixingSampleProvider mixer, in CachedSound? sound,
@@ -26,7 +25,7 @@ internal static class MixingSampleProviderExtension
         SampleControl sampleControl)
     {
         var waveFormat = new WaveFormat(mixer.WaveFormat.SampleRate, mixer.WaveFormat.Channels);
-        var sound = await CachedSoundFactory.GetOrCreateCacheSound(waveFormat, path);
+        var sound = await CachedSoundFactory.GetOrCreateCacheSound(waveFormat, path).ConfigureAwait(false);
         PlaySound(mixer, sound, sampleControl, out var rootSample);
         return rootSample;
     }
@@ -35,7 +34,7 @@ internal static class MixingSampleProviderExtension
         float volume, float balance)
     {
         var waveFormat = new WaveFormat(mixer.WaveFormat.SampleRate, mixer.WaveFormat.Channels);
-        var sound = await CachedSoundFactory.GetOrCreateCacheSound(waveFormat, path);
+        var sound = await CachedSoundFactory.GetOrCreateCacheSound(waveFormat, path).ConfigureAwait(false);
         PlaySound(mixer, sound, volume, balance, out var rootSample);
         return rootSample;
     }

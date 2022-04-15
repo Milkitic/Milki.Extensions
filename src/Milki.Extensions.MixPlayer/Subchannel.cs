@@ -5,7 +5,6 @@ using Milki.Extensions.MixPlayer.NAudioExtensions;
 
 namespace Milki.Extensions.MixPlayer;
 
-[Fody.ConfigureAwait(false)]
 public abstract class Subchannel : IChannel
 {
     public event Action<PlayStatus>? PlayStatusChanged;

@@ -14,7 +14,6 @@ using Milki.Extensions.MixPlayer.Utilities;
 
 namespace Milki.Extensions.MixPlayer;
 
-[Fody.ConfigureAwait(false)]
 public abstract class MultichannelPlayer : IChannel
 {
     public event Action<PlayStatus>? PlayStatusChanged;
@@ -150,7 +149,7 @@ public abstract class MultichannelPlayer : IChannel
         RaisePositionUpdated(_innerTimelineSw.Elapsed, true);
 
         if (_channelsQueue == null)
-            await RequeueChannel();
+            await RequeueChannel().ConfigureAwait(false);
 
         _playTask = Task.Run(async () =>
         {
@@ -172,15 +171,15 @@ public abstract class MultichannelPlayer : IChannel
                         _innerTimelineSw.Stop();
                         foreach (var runningChannel in _runningChannels)
                         {
-                            await runningChannel.Pause();
+                            await runningChannel.Pause().ConfigureAwait(false);
                             //RemoveSubchannel(runningChannel);
                         }
 
-                        await BufferSoundElementsAsync();
+                        await BufferSoundElementsAsync().ConfigureAwait(false);
 
                         foreach (var runningChannel in _runningChannels)
                         {
-                            await runningChannel.Play();
+                            await runningChannel.Play().ConfigureAwait(false);
                             //AddSubchannel(runningChannel);
                         }
 
@@ -203,7 +202,7 @@ public abstract class MultichannelPlayer : IChannel
                     _channelsQueue.TryDequeue(out channel))
                 {
                     _runningChannels.Add(channel);
-                    await channel.Play();
+                    await channel.Play().ConfigureAwait(false);
                     Logger?.LogDebug("[{0}] Play: {1}", _innerTimelineSw.Elapsed, channel.Description);
 
                     if (_channelsQueue.Count == 0)
@@ -227,7 +226,7 @@ public abstract class MultichannelPlayer : IChannel
 
                 if (DateTime.Now - date > TimeSpan.FromMilliseconds(50))
                 {
-                    await InnerSync();
+                    await InnerSync().ConfigureAwait(false);
                     date = DateTime.Now;
                 }
 
@@ -237,7 +236,7 @@ public abstract class MultichannelPlayer : IChannel
 
         foreach (var channel in _runningChannels.ToList())
         {
-            await channel.Play();
+            await channel.Play().ConfigureAwait(false);
         }
 
         PlayStatus = PlayStatus.Playing;
@@ -247,13 +246,13 @@ public abstract class MultichannelPlayer : IChannel
     public async Task Pause()
     {
         var pos = Position;
-        await CancelTask();
+        await CancelTask().ConfigureAwait(false);
         _innerTimelineSw.Stop();
         _innerTimelineSw.SkipTo(pos);
 
         foreach (var channel in _runningChannels.ToList())
         {
-            await channel.Pause();
+            await channel.Pause().ConfigureAwait(false);
         }
 
         RaisePositionUpdated(_innerTimelineSw.Elapsed, true);
@@ -266,22 +265,22 @@ public abstract class MultichannelPlayer : IChannel
             PlayStatus == PlayStatus.Finished ||
             PlayStatus == PlayStatus.Paused)
         {
-            await Play();
+            await Play().ConfigureAwait(false);
         }
-        else if (PlayStatus == PlayStatus.Playing) await Pause();
+        else if (PlayStatus == PlayStatus.Playing) await Pause().ConfigureAwait(false);
     }
 
     public async Task Stop()
     {
         var pos = Position;
-        await CancelTask();
+        await CancelTask().ConfigureAwait(false);
         _innerTimelineSw.Stop();
         _innerTimelineSw.SkipTo(pos);
 
         foreach (var channel in _runningChannels.ToList())
         {
             Logger?.LogDebug("Will stop: {0}.", channel.Description);
-            await channel.Stop();
+            await channel.Stop().ConfigureAwait(false);
             Logger?.LogDebug("{0} stopped.", channel.Description);
         }
 
@@ -292,20 +291,20 @@ public abstract class MultichannelPlayer : IChannel
 
     public async Task Restart()
     {
-        await Stop();
-        await Play();
+        await Stop().ConfigureAwait(false);
+        await Play().ConfigureAwait(false);
     }
 
     public async Task SkipTo(TimeSpan time)
     {
         SetTime(time);
-        await RequeueChannel();
+        await RequeueChannel().ConfigureAwait(false);
         foreach (var channel in _runningChannels.ToList())
         {
-            await channel.SkipTo(time - channel.ChannelStartTime);
+            await channel.SkipTo(time - channel.ChannelStartTime).ConfigureAwait(false);
             if (PlayStatus == PlayStatus.Playing)
             {
-                await channel.Play();
+                await channel.Play().ConfigureAwait(false);
             }
         }
 
@@ -316,24 +315,24 @@ public abstract class MultichannelPlayer : IChannel
     {
         foreach (var channel in _subchannels.ToList())
         {
-            await channel.SetPlaybackRate(rate, keepTune);
+            await channel.SetPlaybackRate(rate, keepTune).ConfigureAwait(false);
         }
 
         PlaybackRate = rate;
         if (keepTune != KeepTune)
         {
             KeepTune = keepTune;
-            await SkipTo(Position);
+            await SkipTo(Position).ConfigureAwait(false);
         }
     }
 
     protected async Task DisposeSubChannelsAsync()
     {
-        await Stop();
+        await Stop().ConfigureAwait(false);
 
         foreach (var subchannel in _subchannels.ToList())
         {
-            await subchannel.DisposeAsync();
+            await subchannel.DisposeAsync().ConfigureAwait(false);
             Logger?.LogDebug("Disposing: Disposed {0}.", subchannel.Description);
         }
 
@@ -344,14 +343,14 @@ public abstract class MultichannelPlayer : IChannel
     public virtual async ValueTask DisposeAsync()
     {
         Logger?.LogDebug($"Disposing: Start to dispose.");
-        await DisposeSubChannelsAsync();
+        await DisposeSubChannelsAsync().ConfigureAwait(false);
 
         Engine.Dispose();
 
         Logger?.LogDebug("Disposing: Disposed {0}.", nameof(Engine));
         _cts?.Dispose();
         Logger?.LogDebug("Disposing: Disposed {0}.", nameof(_cts));
-        await TaskEx.WhenAllSkipNull(_playTask);
+        await TaskEx.WhenAllSkipNull(_playTask).ConfigureAwait(false);
         _playTask?.Dispose();
         Logger?.LogDebug("Disposing: Disposed {0}.", nameof(_playTask));
     }
@@ -396,7 +395,7 @@ public abstract class MultichannelPlayer : IChannel
         {
         }
 
-        await TaskEx.WhenAllSkipNull(_playTask);
+        await TaskEx.WhenAllSkipNull(_playTask).ConfigureAwait(false);
     }
 
     private void SetTime(TimeSpan value)
@@ -411,7 +410,7 @@ public abstract class MultichannelPlayer : IChannel
         {
             foreach (var channel in _runningChannels.ToList())
             {
-                await channel.Sync(Position - channel.ChannelStartTime);
+                await channel.Sync(Position - channel.ChannelStartTime).ConfigureAwait(false);
             }
         }
         else
@@ -423,7 +422,7 @@ public abstract class MultichannelPlayer : IChannel
                 var targetTime = referChannelStartTime - channel.ChannelStartTime;
                 //targetTime = channel.Position +
                 //             TimeSpan.FromMilliseconds((targetTime - channel.Position).TotalMilliseconds / 2);
-                await channel.Sync(targetTime);
+                await channel.Sync(targetTime).ConfigureAwait(false);
             }
 
             _innerTimelineSw.SkipTo(referChannelStartTime);
@@ -442,7 +441,7 @@ public abstract class MultichannelPlayer : IChannel
         {
             if (Position < subchannel.ChannelStartTime)
             {
-                await subchannel.Stop();
+                await subchannel.Stop().ConfigureAwait(false);
             }
         }
 
@@ -459,7 +458,7 @@ public abstract class MultichannelPlayer : IChannel
             //}
             //else
             //{
-            await subchannel.Pause();
+            await subchannel.Pause().ConfigureAwait(false);
             //}
         }
     }
@@ -495,7 +494,7 @@ public abstract class MultichannelPlayer : IChannel
                             k.Offset <= position.TotalMilliseconds + 6000);
             foreach (var soundElement in hitsounds.Where(k => k.FilePath != null))
             {
-                await CachedSoundFactory.GetOrCreateCacheSound(Engine.FileWaveFormat, soundElement.FilePath!);
+                await CachedSoundFactory.GetOrCreateCacheSound(Engine.FileWaveFormat, soundElement.FilePath!).ConfigureAwait(false);
             }
         }
     }

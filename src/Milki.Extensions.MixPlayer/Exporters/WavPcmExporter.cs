@@ -9,7 +9,6 @@ using NAudio.Wave;
 
 namespace Milki.Extensions.MixPlayer.Exporters;
 
-[Fody.ConfigureAwait(false)]
 public class WavPcmExporter : ExporterBase
 {
     public WavPcmExporter(MultiElementsChannel channel, AudioPlaybackEngine engine)
@@ -24,7 +23,7 @@ public class WavPcmExporter : ExporterBase
 
     public override async Task ExportAsync(string filepath, Action<double>? progressCallback = null)
     {
-        await ExportAsync(filepath, 320000, progressCallback);
+        await ExportAsync(filepath, 320000, progressCallback).ConfigureAwait(false);
     }
 
     public async Task ExportAsync(string filepath, int bitRate = 320000, Action<double>? progressCallback = null)
@@ -33,9 +32,9 @@ public class WavPcmExporter : ExporterBase
         using var writer = new WaveFileWriter(outStream, WaveFormat);
         await ExportCoreAsync(async (bytes, offset, count) =>
         {
-            await writer.WriteAsync(bytes, offset, count);
-        }, d => progressCallback?.Invoke(d));
+            await writer.WriteAsync(bytes, offset, count).ConfigureAwait(false);
+        }, d => progressCallback?.Invoke(d)).ConfigureAwait(false);
 
-        await outStream.FlushAsync();
+        await outStream.FlushAsync().ConfigureAwait(false);
     }
 }
