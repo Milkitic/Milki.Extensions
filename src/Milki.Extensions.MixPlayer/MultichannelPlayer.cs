@@ -69,7 +69,7 @@ public abstract class MultichannelPlayer : IChannel
     private DateTime _lastPositionUpdateTime;
     public TimeSpan AutoRefreshInterval { get; protected set; } = TimeSpan.FromMilliseconds(500);
 
-    public MultichannelPlayer(DeviceDescription deviceDescription)
+    public MultichannelPlayer(DeviceDescription? deviceDescription)
     {
         #region Resample? 
 

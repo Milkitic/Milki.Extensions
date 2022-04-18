@@ -37,7 +37,7 @@ public sealed class AudioPlaybackEngine : IDisposable
         };
     }
 
-    public AudioPlaybackEngine(DeviceDescription deviceDescription, int sampleRate = 44100, int channelCount = 2)
+    public AudioPlaybackEngine(DeviceDescription? deviceDescription, int sampleRate = 44100, int channelCount = 2)
     {
         Context = SynchronizationContext.Current ??
                   new StaSynchronizationContext("AudioPlaybackEngine_STA");
