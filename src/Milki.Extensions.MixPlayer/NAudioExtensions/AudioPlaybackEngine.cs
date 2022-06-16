@@ -99,7 +99,7 @@ public sealed class AudioPlaybackEngine : IDisposable
     {
         if (OutputDevice != null)
         {
-            Context.Send(_ => OutputDevice.Dispose(), null);
+            Context.Post(_ => OutputDevice.Dispose(), null);
         }
 
         if (Context is IDisposable id)
