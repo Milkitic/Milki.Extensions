@@ -18,7 +18,7 @@ internal static class NativeHooks
     internal const int WM_SYSKEYUP = 0x0105;
 
     [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-    internal static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
+    internal static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, int dwThreadId);
 
     [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
@@ -35,12 +35,6 @@ internal static class NativeHooks
 
     internal static IntPtr SetGlobalHook(LowLevelKeyboardProc proc)
     {
-        var userLibrary = LoadLibrary("User32");
-        return SetWindowsHookEx(WH_KEYBOARD_LL, proc, userLibrary, 0);
-    }
-
-    internal static IntPtr SetApplicationHook(LowLevelKeyboardProc proc)
-    {
         using var process = Process.GetCurrentProcess();
         using var mainModule = process.MainModule;
         if (mainModule == null)
@@ -48,7 +42,14 @@ internal static class NativeHooks
             throw new Exception("ProcMainModuleNotFound");
         }
 
-        var hMod = GetModuleHandle(mainModule.ModuleName);
-        return SetWindowsHookEx(WH_KEYBOARD_LL, proc, hMod, 0);
+        return SetWindowsHookEx(WH_KEYBOARD_LL, proc, mainModule.BaseAddress, 0);
+    }
+
+    [DllImport("kernel32.dll")]
+    internal static extern int GetCurrentThreadId();
+
+    internal static IntPtr SetApplicationHook(LowLevelKeyboardProc proc)
+    {
+        return SetWindowsHookEx(WH_KEYBOARD_LL, proc, IntPtr.Zero, GetCurrentThreadId());
     }
 }

@@ -4,7 +4,7 @@ namespace Milki.Extensions.MouseKeyHook;
 
 public static class KeyboardHookFactory
 {
-    public static IKeyboardHook CreateApllication()
+    public static IKeyboardHook CreateApplication()
     {
         return new KeyboardHook(false);
     }
