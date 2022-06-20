@@ -22,14 +22,23 @@ namespace KeyHookTest
         private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
         {
             _handle = _keyboardHook.RegisterHotkey(
-                HookModifierKeys.Control|HookModifierKeys.Shift, HookKeys.S, (modifier, key, type) =>
+                HookModifierKeys.Control, HookKeys.S, (modifier, key, type) =>
                 {
-                    if (type == KeyAction.KeyDown)
-                    {
-                        Console.WriteLine("Ctrl+S");
-                    }
+                    Console.WriteLine("Ctrl+S");
                 }
             );
+            _handle = _keyboardHook.RegisterHotkey(
+                HookModifierKeys.Control, HookKeys.O, (modifier, key, type) =>
+                {
+                    Console.WriteLine("Ctrl+O");
+                }
+            );
+            //_handle = _keyboardHook.RegisterKeyUp(
+            //    HookKeys.O, (modifier, key, type) =>
+            //    {
+            //        Console.WriteLine("O");
+            //    }
+            //);
         }
     }
 }

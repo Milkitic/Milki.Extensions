@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace Milki.Extensions.MouseKeyHook.Internal;
 
-internal struct KeyboardParamsDetail
+internal record struct KeyboardParamsDetail
 {
     public HookKeys HookKey;
     public HookModifierKeys HookModifierKeys;
@@ -34,6 +34,20 @@ internal struct KeyboardParamsDetail
 
             keyboardParamsDetail.HookKey = (HookKeys)keyboardHookStruct.VirtualKeyCode;
             keyboardParamsDetail.HookModifierKeys = modifierKeys;
+            if (keyboardParamsDetail.HookKey == HookKeys.ControlKey&&modifierKeys==HookModifierKeys.Control)
+            {
+                keyboardParamsDetail.HookModifierKeys = HookModifierKeys.None;
+            }
+            else if (keyboardParamsDetail.HookKey == HookKeys.ShiftKey && modifierKeys == HookModifierKeys.Shift)
+            {
+                keyboardParamsDetail.HookModifierKeys = HookModifierKeys.None;
+            }
+            else if (keyboardParamsDetail.HookKey is HookKeys.LMenu or HookKeys.RMenu or HookKeys.Alt
+                     && modifierKeys == HookModifierKeys.Alt)
+            {
+                keyboardParamsDetail.HookModifierKeys = HookModifierKeys.None;
+            }
+
             keyboardParamsDetail.ScanCode = keyboardHookStruct.ScanCode;
             keyboardParamsDetail.Timestamp = keyboardHookStruct.Time;
             keyboardParamsDetail.IsKeyDown = isKeyDown;
@@ -69,11 +83,26 @@ internal struct KeyboardParamsDetail
 
             keyboardParamsDetail.HookKey = (HookKeys)wParam;
             keyboardParamsDetail.HookModifierKeys = modifierKeys;
+            if (keyboardParamsDetail.HookKey == HookKeys.ControlKey && modifierKeys == HookModifierKeys.Control)
+            {
+                keyboardParamsDetail.HookModifierKeys = HookModifierKeys.None;
+            }
+            else if (keyboardParamsDetail.HookKey == HookKeys.ShiftKey && modifierKeys == HookModifierKeys.Shift)
+            {
+                keyboardParamsDetail.HookModifierKeys = HookModifierKeys.None;
+            }
+            else if (keyboardParamsDetail.HookKey is HookKeys.LMenu or HookKeys.RMenu or HookKeys.Alt
+                     && modifierKeys == HookModifierKeys.Alt)
+            {
+                keyboardParamsDetail.HookModifierKeys = HookModifierKeys.None;
+            }
+
             keyboardParamsDetail.ScanCode = scanCode;
             keyboardParamsDetail.Timestamp = timestamp;
             keyboardParamsDetail.IsKeyDown = isKeyDown;
             keyboardParamsDetail.IsKeyUp = isKeyUp;
             keyboardParamsDetail.IsExtendedKey = isExtendedKey;
+            //Console.WriteLine(keyboardParamsDetail);
         }
     }
 
