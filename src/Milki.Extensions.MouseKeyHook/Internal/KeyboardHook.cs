@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace Milki.Extensions.MouseKeyHook.Internal;
@@ -10,7 +9,8 @@ internal class KeyboardHook : IKeyboardHook
     public event KeyboardCallback? KeyPressed;
 
     // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
-    private readonly NativeHooks.LowLevelKeyboardProc _hookCallback; // Keeping alive the delegate
+    private readonly NativeHooks.LowLevelKeyboardProc _hookGlobalCallback; // Keeping alive the delegate
+    private readonly NativeHooks.LowLevelKeyboardProc _hookAppCallback; // Keeping alive the delegate
     private readonly IntPtr _hookId;
     private readonly bool _isGlobal;
 
@@ -18,40 +18,41 @@ internal class KeyboardHook : IKeyboardHook
     private readonly Dictionary<Guid, KeyBind> _registeredCallbackGuidMappings = new();
     private readonly HashSet<HookKeys> _downKeys = new();
     private readonly object _modifierKeysLock = new();
-    private ModifierKeys _modifierKeys = ModifierKeys.None;
+    private HookModifierKeys _hookModifierKeys = HookModifierKeys.None;
 
     public KeyboardHook(bool forceGlobal)
     {
         _isGlobal = forceGlobal;
-        _hookCallback = HookCallback;
+        _hookGlobalCallback = HookGlobalCallback;
+        _hookAppCallback = HookAppCallback;
         _hookId = forceGlobal
-            ? NativeHooks.SetGlobalHook(_hookCallback)
-            : NativeHooks.SetApplicationHook(_hookCallback);
+            ? NativeHooks.SetGlobalHook(_hookGlobalCallback)
+            : NativeHooks.SetApplicationHook(_hookAppCallback);
     }
 
     public Guid RegisterKey(HookKeys hookKey, KeyboardCallback callback, bool avoidRepeat = true)
     {
-        return RegisterKeyCore(ModifierKeys.None, hookKey, callback, avoidRepeat);
+        return RegisterKeyCore(HookModifierKeys.None, hookKey, callback, avoidRepeat);
     }
 
-    public Guid RegisterHotkey(ModifierKeys modifierKeys, HookKeys hookKey, KeyboardCallback callback)
+    public Guid RegisterHotkey(HookModifierKeys hookModifierKeys, HookKeys hookKey, KeyboardCallback callback)
     {
-        return RegisterKeyCore(modifierKeys, hookKey, callback, true);
+        return RegisterKeyCore(hookModifierKeys, hookKey, callback, true);
     }
 
     public bool TryUnregisterKey(HookKeys hookKey)
     {
-        return TryUnregisterHotkey(ModifierKeys.None, hookKey);
+        return TryUnregisterHotkey(HookModifierKeys.None, hookKey);
     }
 
-    public bool TryUnregisterHotkey(ModifierKeys modifierKeys, HookKeys hookKey)
+    public bool TryUnregisterHotkey(HookModifierKeys hookModifierKeys, HookKeys hookKey)
     {
-        if (modifierKeys == ModifierKeys.None)
+        if (hookModifierKeys == HookModifierKeys.None)
         {
             throw new ArgumentException("ModifierKeysIsNone");
         }
 
-        var key = new KeyBindTuple(modifierKeys, hookKey);
+        var key = new KeyBindTuple(hookModifierKeys, hookKey);
         var hasValue = _registeredCallbacks.TryGetValue(key, out var keyBind);
         if (hasValue)
         {
@@ -81,9 +82,9 @@ internal class KeyboardHook : IKeyboardHook
         _downKeys.Clear();
     }
 
-    private Guid RegisterKeyCore(ModifierKeys modifierKeys, HookKeys hookKey, KeyboardCallback callback, bool avoidRepeat)
+    private Guid RegisterKeyCore(HookModifierKeys hookModifierKeys, HookKeys hookKey, KeyboardCallback callback, bool avoidRepeat)
     {
-        var keyBindTuple = new KeyBindTuple(modifierKeys, hookKey);
+        var keyBindTuple = new KeyBindTuple(hookModifierKeys, hookKey);
         if (_registeredCallbacks.ContainsKey(keyBindTuple))
         {
             throw new ArgumentException("Hotkey already registered.");
@@ -99,7 +100,7 @@ internal class KeyboardHook : IKeyboardHook
 
     private void HandleKeyPress(HookKeys hookKey, KeyAction keyAction)
     {
-        var modifierKeys = _modifierKeys;
+        var modifierKeys = _hookModifierKeys;
         KeyPressed?.Invoke(modifierKeys, hookKey, keyAction);
 
         var currentKey = new KeyBindTuple(modifierKeys, hookKey);
@@ -119,49 +120,61 @@ internal class KeyboardHook : IKeyboardHook
     private void HandleSingleKeyboardInput(object? state)
     {
         var keyboardParams = (KeyboardParams)state!;
-        var wParam = keyboardParams.wParam;
-        var vkCode = keyboardParams.vkCode;
 
-        var modifierKey = ModifierKeysUtilities.GetModifierKeyFromCode(vkCode);
+        KeyboardParamsDetail paramsDetail = new();
+        KeyboardParamsDetail.GetParamsDetail(keyboardParams, ref paramsDetail);
 
-        var code = (HookKeys)vkCode;
-        if (wParam == (IntPtr)NativeHooks.WM_KEYDOWN || wParam == (IntPtr)NativeHooks.WM_SYSKEYDOWN)
+        var modifierKey = paramsDetail.HookModifierKeys;
+        var hookKey = paramsDetail.HookKey;
+        if (paramsDetail.IsKeyDown)
         {
-            if (modifierKey != ModifierKeys.None)
+            if (modifierKey != HookModifierKeys.None)
             {
                 lock (_modifierKeysLock)
                 {
-                    _modifierKeys |= modifierKey;
+                    _hookModifierKeys |= modifierKey;
                 }
             }
 
-            HandleKeyPress(code, KeyAction.KeyDown);
-            _downKeys.Add(code);
+            HandleKeyPress(hookKey, KeyAction.KeyDown);
+            _downKeys.Add(hookKey);
         }
-        else if (wParam == (IntPtr)NativeHooks.WM_KEYUP || wParam == (IntPtr)NativeHooks.WM_SYSKEYUP)
+        else if (paramsDetail.IsKeyUp)
         {
-            if (modifierKey != ModifierKeys.None)
+            if (modifierKey != HookModifierKeys.None)
             {
                 lock (_modifierKeysLock)
                 {
-                    _modifierKeys &= ~modifierKey;
+                    _hookModifierKeys &= ~modifierKey;
                 }
             }
 
-            HandleKeyPress(code, KeyAction.KeyUp);
-            _downKeys.Remove(code);
+            HandleKeyPress(hookKey, KeyAction.KeyUp);
+            _downKeys.Remove(hookKey);
         }
     }
 
-    private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+    private IntPtr HookGlobalCallback(int nCode, IntPtr wParam, IntPtr lParam)
     {
-        if (nCode >= 0)
+        if (nCode != 0) // pass
         {
-            var vkCode = Marshal.ReadInt32(lParam);
-            // To prevent slowing keyboard input down, we use handle keyboard inputs in a separate thread
-            ThreadPool.QueueUserWorkItem(this.HandleSingleKeyboardInput, new KeyboardParams(wParam, vkCode));
+            return NativeHooks.CallNextHookEx(_hookId, nCode, wParam, lParam);
         }
 
+        // To prevent slowing keyboard input down, we use handle keyboard inputs in a separate thread
+        ThreadPool.QueueUserWorkItem(HandleSingleKeyboardInput, new KeyboardParams(true, wParam, lParam));
+        return NativeHooks.CallNextHookEx(_hookId, nCode, wParam, lParam);
+    }
+
+    private IntPtr HookAppCallback(int nCode, IntPtr wParam, IntPtr lParam)
+    {
+        if (nCode != 0) // pass
+        {
+            return NativeHooks.CallNextHookEx(_hookId, nCode, wParam, lParam);
+        }
+
+        // To prevent slowing keyboard input down, we use handle keyboard inputs in a separate thread
+        ThreadPool.QueueUserWorkItem(HandleSingleKeyboardInput, new KeyboardParams(false, wParam, lParam));
         return NativeHooks.CallNextHookEx(_hookId, nCode, wParam, lParam);
     }
 }

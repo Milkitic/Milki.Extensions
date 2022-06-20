@@ -3,7 +3,7 @@
 namespace Milki.Extensions.MouseKeyHook;
 
 [Flags]
-public enum ModifierKeys : byte
+public enum HookModifierKeys : byte
 {
     None = 0,
     Alt = 1,

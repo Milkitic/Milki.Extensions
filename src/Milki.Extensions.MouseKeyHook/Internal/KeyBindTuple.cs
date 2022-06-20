@@ -5,17 +5,17 @@ namespace Milki.Extensions.MouseKeyHook.Internal;
 internal readonly struct KeyBindTuple : IEquatable<KeyBindTuple>
 {
     public readonly HookKeys HookKeyCode;
-    public readonly ModifierKeys Modifiers;
+    public readonly HookModifierKeys HookModifiers;
 
-    public KeyBindTuple(ModifierKeys modifiers, HookKeys hookKeyCode)
+    public KeyBindTuple(HookModifierKeys hookModifiers, HookKeys hookKeyCode)
     {
-        Modifiers = modifiers;
+        HookModifiers = hookModifiers;
         HookKeyCode = hookKeyCode;
     }
 
     public bool Equals(KeyBindTuple other)
     {
-        return HookKeyCode == other.HookKeyCode && Modifiers == other.Modifiers;
+        return HookKeyCode == other.HookKeyCode && HookModifiers == other.HookModifiers;
     }
 
     public override bool Equals(object? obj)
@@ -27,7 +27,7 @@ internal readonly struct KeyBindTuple : IEquatable<KeyBindTuple>
     {
         unchecked
         {
-            return ((int)HookKeyCode * 397) ^ (int)Modifiers;
+            return ((int)HookKeyCode * 397) ^ (int)HookModifiers;
         }
     }
 

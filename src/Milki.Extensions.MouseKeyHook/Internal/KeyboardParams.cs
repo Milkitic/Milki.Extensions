@@ -1,17 +1,19 @@
-﻿using System;
+﻿// ReSharper disable InconsistentNaming
 
-// ReSharper disable InconsistentNaming
+using System;
 
 namespace Milki.Extensions.MouseKeyHook.Internal;
 
-internal readonly struct KeyboardParams
+internal class KeyboardParams
 {
-    internal readonly IntPtr wParam;
-    internal readonly int vkCode;
-
-    public KeyboardParams(IntPtr wParam, int vkCode)
+    public KeyboardParams(bool isGlobal, IntPtr wParam, IntPtr lParam)
     {
-        this.wParam = wParam;
-        this.vkCode = vkCode;
+        IsGlobal = isGlobal;
+        WParam = wParam;
+        LParam = lParam;
     }
+
+    public bool IsGlobal { get; }
+    public IntPtr WParam { get; }
+    public IntPtr LParam { get; }
 }
