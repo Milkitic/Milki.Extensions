@@ -8,7 +8,7 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions;
 internal static class MixingSampleProviderExtension
 {
     internal static ISampleProvider? PlaySound(this MixingSampleProvider mixer, in CachedSound? sound,
-        SampleControl sampleControl)
+        SampleControl? sampleControl)
     {
         PlaySound(mixer, sound, sampleControl, out var rootSample);
         return rootSample;
@@ -22,7 +22,7 @@ internal static class MixingSampleProviderExtension
     }
 
     public static async Task<ISampleProvider?> PlaySound(this MixingSampleProvider mixer, string path,
-        SampleControl sampleControl)
+        SampleControl? sampleControl)
     {
         var waveFormat = new WaveFormat(mixer.WaveFormat.SampleRate, mixer.WaveFormat.Channels);
         var sound = await CachedSoundFactory.GetOrCreateCacheSound(waveFormat, path).ConfigureAwait(false);
@@ -40,16 +40,22 @@ internal static class MixingSampleProviderExtension
     }
 
     public static void AddMixerInput(this MixingSampleProvider mixer, ISampleProvider input,
-        SampleControl sampleControl, out ISampleProvider rootSample)
+        SampleControl? sampleControl, out ISampleProvider rootSample)
     {
-        var adjustVolume = input.AddToAdjustVolume(sampleControl.Volume);
-        var adjustBalance = adjustVolume.AddToBalanceProvider(sampleControl.Balance);
-
-        sampleControl.VolumeChanged = f => adjustVolume.Volume = f;
-        sampleControl.BalanceChanged = f => adjustBalance.Balance = f;
-
-        rootSample = adjustBalance;
-        mixer.AddMixerInput(adjustBalance);
+        if (sampleControl != null)
+        {
+            var adjustVolume = input.AddToAdjustVolume(sampleControl.Volume);
+            var adjustBalance = adjustVolume.AddToBalanceProvider(sampleControl.Balance);
+            sampleControl.VolumeChanged ??= f => adjustVolume.Volume = f;
+            sampleControl.BalanceChanged ??= f => adjustBalance.Balance = f;
+            rootSample = adjustBalance;
+            mixer.AddMixerInput(adjustBalance);
+        }
+        else
+        {
+            rootSample = input;
+            mixer.AddMixerInput(input);
+        }
     }
 
     public static void AddMixerInput(this MixingSampleProvider mixer, ISampleProvider input,
@@ -62,7 +68,7 @@ internal static class MixingSampleProviderExtension
         mixer.AddMixerInput(adjustBalance);
     }
 
-    private static void PlaySound(MixingSampleProvider mixer, in CachedSound? sound, SampleControl sampleControl,
+    private static void PlaySound(MixingSampleProvider mixer, in CachedSound? sound, SampleControl? sampleControl,
         out ISampleProvider? rootSample)
     {
         if (sound == null)

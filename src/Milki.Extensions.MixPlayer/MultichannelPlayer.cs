@@ -47,8 +47,8 @@ public abstract class MultichannelPlayer : IChannel
 
     public float Volume
     {
-        get => Engine.RootVolume;
-        set => Engine.RootVolume = value;
+        get => Engine.Volume;
+        set => Engine.Volume = value;
     }
 
     protected ReadOnlyCollection<Subchannel> Subchannels => new(_subchannels);

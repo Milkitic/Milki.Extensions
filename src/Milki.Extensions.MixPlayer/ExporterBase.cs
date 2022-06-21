@@ -24,7 +24,7 @@ public abstract class ExporterBase
         _channels = channels.ToArray();
         _engine = engine;
 
-        var sourceProvider = _engine.Root.ToWaveProvider();
+        var sourceProvider = _engine.RootSampleProvider.ToWaveProvider();
         _sourceProvider = new WaveFloatTo16Provider(sourceProvider);
         WaveFormat = _sourceProvider.WaveFormat;
     }

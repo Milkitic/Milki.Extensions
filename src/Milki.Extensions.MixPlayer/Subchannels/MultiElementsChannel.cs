@@ -89,7 +89,7 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
                 ReadFully = true
             };
             _volumeProvider = new VolumeSampleProvider(Submixer);
-            Engine.AddRootSample(_volumeProvider);
+            Engine.AddMixerInput(_volumeProvider);
         }
 
         await Stop().ConfigureAwait(false);
@@ -393,7 +393,7 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
         _cts?.Dispose();
         Logger?.LogDebug($"Disposing: Disposed {nameof(_cts)}.");
         if (_volumeProvider != null)
-            Engine.RemoveRootSample(_volumeProvider);
+            Engine.RemoveMixerInput(_volumeProvider);
         //await base.DisposeAsync();
         //Logger.Debug($"Disposing: Disposed base.");
     }
