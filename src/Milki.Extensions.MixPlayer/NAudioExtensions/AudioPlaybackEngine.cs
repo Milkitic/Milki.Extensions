@@ -1,7 +1,10 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Milki.Extensions.MixPlayer.Annotations;
 using Milki.Extensions.MixPlayer.Devices;
 using Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 using Milki.Extensions.MixPlayer.Threading;
@@ -10,7 +13,7 @@ using NAudio.Wave.SampleProviders;
 
 namespace Milki.Extensions.MixPlayer.NAudioExtensions;
 
-public sealed class AudioPlaybackEngine : IDisposable
+public sealed class AudioPlaybackEngine : IDisposable, INotifyPropertyChanged
 {
     public delegate void PlaybackTimingChangedEvent(AudioPlaybackEngine sender, TimeSpan oldTimestamp,
         TimeSpan newTimestamp);
@@ -48,10 +51,10 @@ public sealed class AudioPlaybackEngine : IDisposable
         get => _volumeProvider?.Volume ?? 1;
         set
         {
-            if (_volumeProvider != null)
-            {
-                _volumeProvider.Volume = value;
-            }
+            if (_volumeProvider == null) return;
+            if (value.Equals(_volumeProvider.Volume)) return;
+            _volumeProvider.Volume = value;
+            OnPropertyChanged();
         }
     }
 
@@ -143,5 +146,13 @@ public sealed class AudioPlaybackEngine : IDisposable
         }
 
         RootSampleProvider = root;
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    [NotifyPropertyChangedInvocator]
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
