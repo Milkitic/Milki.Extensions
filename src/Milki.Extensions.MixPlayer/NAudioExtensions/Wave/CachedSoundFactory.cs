@@ -37,21 +37,28 @@ public static class CachedSoundFactory
         return false;
     }
 
-    public static async Task<CachedSound?> GetOrCreateCacheSound(WaveFormat waveFormat, string? path, string? identifier = null)
+    public static async Task<CachedSound?> GetOrCreateCacheSound(WaveFormat waveFormat, string? path,
+        string? identifier = null, bool checkFileExist = true)
     {
-        if (path == null) return null;
+        return (await GetOrCreateCacheSoundStatus(waveFormat, path, identifier, checkFileExist)).cachedSound;
+    }
+
+    public static async Task<(CachedSound? cachedSound, bool? cacheStatus)> GetOrCreateCacheSoundStatus(
+        WaveFormat waveFormat, string? path, string? identifier = null, bool checkFileExist = true)
+    {
+        if (path == null) return (null, false);
         var dict = IdentifiersDictionary.GetOrAdd(identifier ?? "default",
             _ => new ConcurrentDictionary<string, CachedSound?>());
 
         if (dict.TryGetValue(path, out var value))
         {
-            return value;
+            return (value, null);
         }
 
-        if (!File.Exists(path))
+        if (checkFileExist && !File.Exists(path))
         {
             dict.TryAdd(path, null);
-            return null;
+            return (null, false);
         }
 
         CachedSound cachedSound;
@@ -63,7 +70,7 @@ public static class CachedSoundFactory
         {
             Logger?.LogError($"Error while creating cached sound: {path}" + ex.Message);
             dict.TryAdd(path, null);
-            return null;
+            return (null, false);
         }
 
         // Cache each file once before play.
@@ -75,7 +82,7 @@ public static class CachedSoundFactory
                 .Sum(k => k.Value?.AudioData.Length * sizeof(float) ?? 0))
         );
 
-        return sound;
+        return (sound, true);
     }
 
     public static void ClearCacheSounds(string? identifier = null)
