@@ -100,10 +100,7 @@ public sealed class AudioPlaybackEngine : IDisposable, INotifyPropertyChanged
 
     public void Dispose()
     {
-        if (OutputDevice != null)
-        {
-            Context.Send(_ => OutputDevice.Dispose(), null);
-        }
+        OutputDevice?.Dispose();
 
         if (Context is IDisposable disposable)
         {

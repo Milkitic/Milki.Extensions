@@ -4,7 +4,7 @@ namespace Milki.Extensions.MixPlayer
 {
     internal class ChannelEndTimeComparer : IComparer<Subchannel>
     {
-        public int Compare(Subchannel x, Subchannel y)
+        public int Compare(Subchannel? x, Subchannel? y)
         {
             if (x is null && y is null)
                 return 0;

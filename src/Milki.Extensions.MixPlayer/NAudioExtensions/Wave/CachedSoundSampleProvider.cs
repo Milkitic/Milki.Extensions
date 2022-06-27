@@ -3,7 +3,7 @@ using NAudio.Wave;
 
 namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 
-internal class CachedSoundSampleProvider : ISampleProvider
+public class CachedSoundSampleProvider : ISampleProvider
 {
     private readonly CachedSound _sourceSound;
     private int _position;
