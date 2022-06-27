@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
-using Milki.Extensions.MixPlayer.Annotations;
 
 namespace Milki.Extensions.MixPlayer
 {
@@ -119,8 +118,6 @@ namespace Milki.Extensions.MixPlayer
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
-
-        [NotifyPropertyChangedInvocator]
         protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
