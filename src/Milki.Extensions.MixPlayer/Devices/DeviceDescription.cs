@@ -19,6 +19,9 @@ public class DeviceDescription : IEquatable<DeviceDescription>
     [Description("Available for WASAPI (excluded >= 3ms, non-excluded >= 0ms), DirectSound (around >= 20ms)")]
     public int Latency { get; set; }
 
+    [Description("Available for ASIO, zero for preffered buffer size from driver.")]
+    public ushort ForceASIOBufferSize { get; set; }
+
     [Description("Available for WASAPI")]
     public bool IsExclusive { get; set; }
 
@@ -57,7 +60,7 @@ public class DeviceDescription : IEquatable<DeviceDescription>
         if (ReferenceEquals(this, other)) return true;
         return WavePlayerType == other.WavePlayerType && DeviceId == other.DeviceId;
     }
-    
+
     public static bool operator ==(DeviceDescription? left, DeviceDescription? right)
     {
         return Equals(left, right);

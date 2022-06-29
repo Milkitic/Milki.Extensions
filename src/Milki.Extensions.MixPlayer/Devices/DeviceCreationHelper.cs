@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using NAudio.CoreAudioApi;
 using NAudio.CoreAudioApi.Interfaces;
 using NAudio.Wave;
+using NAudio.Wave.Asio;
 
 namespace Milki.Extensions.MixPlayer.Devices;
 
@@ -19,6 +21,8 @@ public static class DeviceCreationHelper
 
     private static IReadOnlyList<DeviceDescription>? _cacheList;
     private static readonly object SetLock = new();
+    private static FieldInfo? _asioExtField;
+    private static FieldInfo? _capabilityField;
 
     static DeviceCreationHelper()
     {
@@ -135,6 +139,31 @@ public static class DeviceCreationHelper
         }
 
         IWavePlayer device = new AsioOut(description.DeviceId);
+
+        if (description.ForceASIOBufferSize <= 0) return device;
+        try
+        {
+            _asioExtField ??=
+                typeof(AsioOut).GetField("driver", BindingFlags.Instance | BindingFlags.NonPublic);
+            _capabilityField ??=
+                typeof(AsioDriverExt).GetField("capability", BindingFlags.Instance | BindingFlags.NonPublic);
+
+            if (_asioExtField != null && _capabilityField != null)
+            {
+                var driver = _asioExtField.GetValue(device);
+                var capability = (AsioDriverCapability)_capabilityField.GetValue(driver);
+                capability.BufferPreferredSize = description.ForceASIOBufferSize;
+            }
+            else
+            {
+                Logger?.LogWarning("Failed to force buffer size: NAudio internal field has been changed.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger?.LogWarning(ex, "Failed to force buffer size: NAudio internal field has been changed.");
+        }
+
         return device;
     }
 
