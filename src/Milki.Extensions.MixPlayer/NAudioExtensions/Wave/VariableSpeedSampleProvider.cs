@@ -1,11 +1,10 @@
 ﻿using System;
 using Microsoft.Extensions.Logging;
-using Milki.Extensions.MixPlayer.NAudioExtensions.SoundTouch;
 using NAudio.Wave;
 
 namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 
-internal class VariableSpeedSampleProvider : ISampleProvider, IDisposable
+public class VariableSpeedSampleProvider : ISampleProvider, IDisposable
 {
     private readonly ISampleProvider _sourceProvider;
     private readonly SoundTouch.SoundTouch _soundTouch;
@@ -15,11 +14,11 @@ internal class VariableSpeedSampleProvider : ISampleProvider, IDisposable
     private float _playbackRate = 1.0f;
     private bool _repositionRequested;
 
-    private SoundTouchProfile? _currentSoundTouchProfile;
+    private VariableSpeedOptions? _currentSoundTouchProfile;
 
     public VariableSpeedSampleProvider(ISampleProvider sourceProvider,
         int readDurationMilliseconds,
-        SoundTouchProfile soundTouchProfile)
+        VariableSpeedOptions variableSpeedOptions)
     {
         _soundTouch = new SoundTouch.SoundTouch();
         // explore what the default values are before we change them:
@@ -29,7 +28,7 @@ internal class VariableSpeedSampleProvider : ISampleProvider, IDisposable
         logger?.LogDebug("Use QuickSeek: {0}", _soundTouch.GetUseQuickSeek());
         logger?.LogDebug("Use AntiAliasing: {0}", _soundTouch.GetUseAntiAliasing());
 
-        SetSoundTouchProfile(soundTouchProfile);
+        SetSoundTouchProfile(variableSpeedOptions);
         _sourceProvider = sourceProvider;
         _soundTouch.SetSampleRate(WaveFormat.SampleRate);
         _channelCount = WaveFormat.Channels;
@@ -102,13 +101,13 @@ internal class VariableSpeedSampleProvider : ISampleProvider, IDisposable
         }
     }
 
-    public void SetSoundTouchProfile(SoundTouchProfile soundTouchProfile)
+    public void SetSoundTouchProfile(VariableSpeedOptions variableSpeedOptions)
     {
         if (_currentSoundTouchProfile != null &&
             !_playbackRate.Equals(1) &&
-            soundTouchProfile.KeepTune != _currentSoundTouchProfile.KeepTune)
+            variableSpeedOptions.KeepTune != _currentSoundTouchProfile.KeepTune)
         {
-            if (soundTouchProfile.KeepTune)
+            if (variableSpeedOptions.KeepTune)
             {
                 _soundTouch.SetRate(1.0f);
                 _soundTouch.SetPitchOctaves(0f);
@@ -120,9 +119,9 @@ internal class VariableSpeedSampleProvider : ISampleProvider, IDisposable
                 _soundTouch.SetRate(_playbackRate);
             }
         }
-        _currentSoundTouchProfile = soundTouchProfile;
-        _soundTouch.SetUseAntiAliasing(soundTouchProfile.UseAntiAliasing);
-        _soundTouch.SetUseQuickSeek(soundTouchProfile.UseQuickSeek);
+        _currentSoundTouchProfile = variableSpeedOptions;
+        _soundTouch.SetUseAntiAliasing(variableSpeedOptions.UseAntiAliasing);
+        _soundTouch.SetUseQuickSeek(variableSpeedOptions.UseQuickSeek);
     }
 
     public void Reposition()

@@ -1,12 +1,12 @@
-namespace Milki.Extensions.MixPlayer.NAudioExtensions.SoundTouch
+namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave
 {
-    internal class SoundTouchProfile
+    public class VariableSpeedOptions
     {
         public bool KeepTune { get; set; }
         public bool UseAntiAliasing { get; set; }
         public bool UseQuickSeek { get; set; } = true;
 
-        public SoundTouchProfile(bool keepTune, bool useAntiAliasing)
+        public VariableSpeedOptions(bool keepTune, bool useAntiAliasing)
         {
             KeepTune = keepTune;
             UseAntiAliasing = useAntiAliasing;

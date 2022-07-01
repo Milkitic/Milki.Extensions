@@ -58,7 +58,7 @@ public class SingleMediaChannel : Subchannel
 
         _speedProvider = new VariableSpeedSampleProvider(_fileReader,
             10,
-            new SoundTouchProfile(KeepTune, false)
+            new VariableSpeedOptions(KeepTune, false)
         )
         {
             PlaybackRate = PlaybackRate
@@ -214,7 +214,7 @@ public class SingleMediaChannel : Subchannel
 
         if (KeepTune != keepTune)
         {
-            _speedProvider?.SetSoundTouchProfile(new SoundTouchProfile(keepTune, false));
+            _speedProvider?.SetSoundTouchProfile(new VariableSpeedOptions(keepTune, false));
             KeepTune = keepTune;
         }
 
