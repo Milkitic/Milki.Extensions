@@ -37,6 +37,18 @@ public static class CachedSoundFactory
         return false;
     }
 
+    public static CachedSound? GetCacheSound(string? path, string? identifier = null)
+    {
+        var dict = IdentifiersDictionary.GetOrAdd(identifier ?? "default",
+            _ => new ConcurrentDictionary<string, CachedSound?>());
+        if (path != null && dict.TryGetValue(path, out var value))
+        {
+            return value;
+        }
+
+        return null;
+    }
+
     public static async Task<CachedSound?> GetOrCreateCacheSound(WaveFormat waveFormat, string? path,
         string? identifier = null, bool checkFileExist = true)
     {
