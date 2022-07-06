@@ -12,7 +12,7 @@ using NAudio.Wave.SampleProviders;
 
 namespace Milki.Extensions.MixPlayer.NAudioExtensions;
 
-public sealed class AudioPlaybackEngine : IDisposable, INotifyPropertyChanged
+public class AudioPlaybackEngine : IDisposable, INotifyPropertyChanged
 {
     public delegate void PlaybackTimingChangedEvent(AudioPlaybackEngine sender, TimeSpan oldTimestamp,
         TimeSpan newTimestamp);
@@ -26,6 +26,7 @@ public sealed class AudioPlaybackEngine : IDisposable, INotifyPropertyChanged
         bool notifyProgress = true,
         bool enableVolume = true)
     {
+        Context = SynchronizationContext.Current ?? new StaSynchronizationContext("AudioPlaybackEngine_STA");
         OutputDevice = outputDevice;
         Initialize(sampleRate, channelCount, notifyProgress, enableVolume);
     }
@@ -34,6 +35,7 @@ public sealed class AudioPlaybackEngine : IDisposable, INotifyPropertyChanged
         bool notifyProgress = true,
         bool enableVolume = true)
     {
+        Context = SynchronizationContext.Current ?? new StaSynchronizationContext("AudioPlaybackEngine_STA");
         OutputDevice = DeviceCreationHelper.CreateDevice(out _, deviceDescription, Context);
         Initialize(sampleRate, channelCount, notifyProgress, enableVolume);
     }
@@ -109,7 +111,6 @@ public sealed class AudioPlaybackEngine : IDisposable, INotifyPropertyChanged
 
     private void Initialize(int sampleRate, int channelCount, bool notifyProgress, bool enableVolume)
     {
-        Context = /*SynchronizationContext.Current ??*/new StaSynchronizationContext("AudioPlaybackEngine_STA");
         WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channelCount);
         FileWaveFormat = new WaveFormat(sampleRate, channelCount);
         RootMixer = new MixingSampleProvider(WaveFormat)
