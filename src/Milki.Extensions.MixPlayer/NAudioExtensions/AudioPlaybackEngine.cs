@@ -138,7 +138,20 @@ public class AudioPlaybackEngine : IDisposable, INotifyPropertyChanged
 
         if (OutputDevice != null)
         {
-            Context.Send(_ => OutputDevice.Init(root), null);
+            Exception? ex = null;
+            Context.Send(_ =>
+            {
+                try
+                {
+                    OutputDevice.Init(root);
+                }
+                catch (Exception e)
+                {
+                    ex = e;
+                }
+            }, null);
+
+            if (ex != null) throw ex;
             OutputDevice.Play();
         }
 
