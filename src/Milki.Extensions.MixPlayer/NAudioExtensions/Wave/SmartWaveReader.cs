@@ -1,9 +1,7 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
+using Milki.Extensions.MixPlayer.Utilities;
 using NAudio.Vorbis;
 using NAudio.Wave;
-using TagLib;
-using File = System.IO.File;
 
 namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 
@@ -30,6 +28,7 @@ public class SmartWaveReader : WaveStream, ISampleProvider
     {
         _lockObject = new object();
         _stream = stream.CanSeek ? stream : new ReadSeekableStream(stream, 4096);
+        _stream.Seek(0, SeekOrigin.Begin);
         if (_stream is FileStream fs)
         {
             FileName = fs.Name;
@@ -105,21 +104,10 @@ public class SmartWaveReader : WaveStream, ISampleProvider
 
     private void CreateReaderStream(Stream sourceStream)
     {
-        var file = TagLib.File.Create(new StreamAbstraction(sourceStream));
+        var waveType = WaveTypeHelper.GetWaveTypeFromStream(sourceStream);
         sourceStream.Seek(0, SeekOrigin.Begin);
-        var prop = file.Properties;
-        if (prop == null)
-        {
-            _readerStream = new StreamMediaFoundationReader(sourceStream);
-            return;
-        }
 
-        if (prop.MediaTypes != MediaTypes.Audio)
-        {
-            throw new Exception("Input is not a valid audio stream.");
-        }
-
-        if (prop.Description.IndexOf("PCM", StringComparison.Ordinal) != -1)
+        if (waveType == WaveType.Wav)
         {
             _readerStream = new WaveFileReader(sourceStream);
             if (_readerStream.WaveFormat.Encoding is WaveFormatEncoding.Pcm or WaveFormatEncoding.IeeeFloat)
@@ -127,15 +115,15 @@ public class SmartWaveReader : WaveStream, ISampleProvider
             _readerStream = WaveFormatConversionStream.CreatePcmStream(_readerStream);
             _readerStream = new BlockAlignReductionStream(_readerStream);
         }
-        else if (prop.Description.IndexOf("Layer 3", StringComparison.Ordinal) != -1)
+        else if (waveType == WaveType.Mp3)
         {
             _readerStream = new Mp3FileReader(sourceStream);
         }
-        else if (prop.Description.IndexOf("Vorbis", StringComparison.Ordinal) != -1)
+        else if (waveType == WaveType.Ogg)
         {
             _readerStream = new VorbisWaveReader(sourceStream);
         }
-        else if (prop.Description.IndexOf("AIFF", StringComparison.Ordinal) != -1)
+        else if (waveType == WaveType.Aiff)
         {
             _readerStream = new AiffFileReader(sourceStream);
         }

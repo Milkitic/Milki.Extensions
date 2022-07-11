@@ -14,6 +14,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Milki.Extensions.MixPlayer.Devices;
 using Milki.Extensions.MixPlayer.NAudioExtensions;
+using Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
@@ -33,19 +34,16 @@ namespace AsioTest
             InitializeComponent();
         }
 
-        private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
+        private async void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
         {
             var name = AsioOut.GetDriverNames().FirstOrDefault();
 
-            _asio = DeviceCreationHelper.CreateDevice(out var description, new DeviceDescription()
-            {
-                ForceASIOBufferSize = 16,
-                FriendlyName = name,
-                WavePlayerType = WavePlayerType.ASIO,
-                DeviceId = name
-            });
-
+            _asio = DeviceCreationHelper.CreateDevice(out var description, null);
             _engine = new AudioPlaybackEngine(_asio);
+            var s1 = await CachedSoundFactory.GetOrCreateCacheSound(_engine.WaveFormat,
+                @"C:\Users\milkitic\Downloads\1680421 EBIMAYO - GOODTEK [no video]\soft-hitclap.wav");
+            var s2 = await CachedSoundFactory.GetOrCreateCacheSound(_engine.WaveFormat,
+                @"C:\Users\milkitic\Downloads\1680421 EBIMAYO - GOODTEK [no video]\soft-hitnormal2.wav");
         }
 
         private void MainWindow_OnClosed(object? sender, EventArgs e)
