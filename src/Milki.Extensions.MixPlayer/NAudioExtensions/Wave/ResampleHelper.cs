@@ -14,22 +14,22 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 internal static class ResampleHelper
 {
     private static readonly ILogger? Logger = Configuration.Instance.GetCurrentClassLogger();
-    public static async Task<SmartAudioReader> GetResampledAudioFileReader(string path, WaveFormat newWaveFormat)
+    public static async Task<SmartWaveReader> GetResampledAudioFileReader(string path, WaveFormat newWaveFormat)
     {
         var stream = await Resample(path, newWaveFormat).ConfigureAwait(false);
-        return stream is SmartAudioReader afr ? afr : new SmartAudioReader(stream);
+        return stream is SmartWaveReader afr ? afr : new SmartWaveReader(stream);
     }
 
     private static async Task<Stream> Resample(string path, WaveFormat newWaveFormat)
     {
         return await Task.Run(() =>
         {
-            SmartAudioReader? audioFileReader = null;
+            SmartWaveReader? audioFileReader = null;
             try
             {
                 audioFileReader = File.Exists(path)
-                    ? new SmartAudioReader(path)
-                    : new SmartAudioReader(SharedUtils.EmptyWaveFile);
+                    ? new SmartWaveReader(path)
+                    : new SmartWaveReader(SharedUtils.EmptyWaveFile);
                 if (CompareWaveFormat(audioFileReader.WaveFormat, newWaveFormat))
                 {
                     return (Stream)audioFileReader;

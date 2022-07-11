@@ -16,7 +16,7 @@ public class SingleMediaChannel : Subchannel
 {
     private readonly string _path;
 
-    private SmartAudioReader? _fileReader;
+    private SmartWaveReader? _fileReader;
     private VariableSpeedSampleProvider? _speedProvider;
     private ISampleProvider? _actualRoot;
 
