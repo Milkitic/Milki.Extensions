@@ -4,7 +4,6 @@ using System.IO;
 using System.Threading.Tasks;
 using Milki.Extensions.MixPlayer.NAudioExtensions;
 using Milki.Extensions.MixPlayer.Subchannels;
-using NAudio.Vorbis;
 using NAudio.Wave;
 
 namespace Milki.Extensions.MixPlayer.Exporters;

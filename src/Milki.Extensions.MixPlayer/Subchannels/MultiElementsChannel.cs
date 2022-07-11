@@ -32,7 +32,7 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
     private readonly object _skipLock = new object();
 
     private readonly LoopProviders _loopProviders = new();
-    
+
     private readonly MixSettings _mixSettings;
 
     public bool IsPlayRunning => _playingTask != null &&

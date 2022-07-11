@@ -28,7 +28,7 @@ internal sealed class StaThread
     {
         _staThread.Start();
     }
-    
+
     internal void Join()
     {
         _staThread.Join();

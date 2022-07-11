@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Milki.Extensions.MixPlayer.NAudioExtensions;
-using Milki.Extensions.MixPlayer.NAudioExtensions.SoundTouch;
 using Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 using Milki.Extensions.MixPlayer.Utilities;
 using NAudio.Wave;
