@@ -16,7 +16,7 @@ public class SingleMediaChannel : Subchannel
 {
     private readonly string _path;
 
-    private MyAudioFileReader? _fileReader;
+    private SmartAudioReader? _fileReader;
     private VariableSpeedSampleProvider? _speedProvider;
     private ISampleProvider? _actualRoot;
 
@@ -44,7 +44,7 @@ public class SingleMediaChannel : Subchannel
     public sealed override float PlaybackRate { get; protected set; }
     public sealed override bool KeepTune { get; protected set; }
 
-    public SingleMediaChannel(AudioPlaybackEngine engine, string path, float playbackRate, bool keepTune) 
+    public SingleMediaChannel(AudioPlaybackEngine engine, string path, float playbackRate, bool keepTune)
         : base(engine)
     {
         _path = path;
@@ -54,7 +54,7 @@ public class SingleMediaChannel : Subchannel
 
     public override async Task Initialize()
     {
-        _fileReader = await ResampleHelper.GetResampledAudioFileReader(_path, WaveType.Wav, Engine.FileWaveFormat).ConfigureAwait(false);
+        _fileReader = await ResampleHelper.GetResampledAudioFileReader(_path, Engine.FileWaveFormat).ConfigureAwait(false);
 
         _speedProvider = new VariableSpeedSampleProvider(_fileReader,
             10,
