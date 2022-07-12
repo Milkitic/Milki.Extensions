@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using Milki.Extensions.MixPlayer.Utilities;
 using NAudio.Vorbis;
 using NAudio.Wave;
@@ -13,6 +14,8 @@ public class SmartWaveReader : WaveStream, ISampleProvider
     private readonly long _length;
     private readonly object _lockObject;
     private readonly Stream _stream;
+    private bool _isDisposed;
+    private WaveStream _readerStream = null!;
 
     public SmartWaveReader(string fileName)
         : this(File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.Read))
@@ -38,7 +41,7 @@ public class SmartWaveReader : WaveStream, ISampleProvider
         }
 
         CreateReaderStream(_stream);
-        _sourceBytesPerSample = (ReaderStream!.WaveFormat.BitsPerSample / 8) * ReaderStream.WaveFormat.Channels;
+        _sourceBytesPerSample = (ReaderStream.WaveFormat.BitsPerSample / 8) * ReaderStream.WaveFormat.Channels;
         _sampleChannel = new NAudio.Wave.SampleProviders.SampleChannel(ReaderStream, false);
         _destBytesPerSample = 4 * _sampleChannel.WaveFormat.Channels;
         _length = SourceToDest(ReaderStream.Length);
@@ -62,15 +65,35 @@ public class SmartWaveReader : WaveStream, ISampleProvider
     /// <summary>
     /// Actual based WaveStream 
     /// </summary>
-    public WaveStream? ReaderStream { get; private set; }
+    public WaveStream ReaderStream
+    {
+        get
+        {
+            if (_isDisposed) throw new ObjectDisposedException(nameof(ReaderStream));
+            return _readerStream;
+        }
+        private set
+        {
+            if (_isDisposed) throw new ObjectDisposedException(nameof(ReaderStream));
+            _readerStream = value;
+        }
+    }
 
     /// <summary>
     /// Position of this stream (in bytes)
     /// </summary>
     public override long Position
     {
-        get => SourceToDest(ReaderStream!.Position);
-        set { lock (_lockObject) ReaderStream!.Position = DestToSource(value); }
+        get
+        {
+            if (_isDisposed) throw new ObjectDisposedException(nameof(ReaderStream));
+            return SourceToDest(ReaderStream.Position);
+        }
+        set
+        {
+            if (_isDisposed) throw new ObjectDisposedException(nameof(ReaderStream));
+            lock (_lockObject) ReaderStream.Position = DestToSource(value);
+        }
     }
 
     public float Volume
@@ -101,6 +124,7 @@ public class SmartWaveReader : WaveStream, ISampleProvider
             ReaderStream.Dispose();
             ReaderStream = null;
             _stream.Dispose();
+            _isDisposed = true;
         }
 
         base.Dispose(disposing);
