@@ -104,10 +104,10 @@ public class SmartWaveReader : WaveStream, ISampleProvider
 
     private void CreateReaderStream(Stream sourceStream)
     {
-        var waveType = WaveTypeHelper.GetWaveTypeFromStream(sourceStream);
+        var fileFormat = FileFormatHelper.GetFileFormatFromStream(sourceStream);
         sourceStream.Seek(0, SeekOrigin.Begin);
 
-        if (waveType == WaveType.Wav)
+        if (fileFormat == FileFormat.Wav)
         {
             _readerStream = new WaveFileReader(sourceStream);
             if (_readerStream.WaveFormat.Encoding is WaveFormatEncoding.Pcm or WaveFormatEncoding.IeeeFloat)
@@ -115,15 +115,15 @@ public class SmartWaveReader : WaveStream, ISampleProvider
             _readerStream = WaveFormatConversionStream.CreatePcmStream(_readerStream);
             _readerStream = new BlockAlignReductionStream(_readerStream);
         }
-        else if (waveType == WaveType.Mp3)
+        else if (fileFormat == FileFormat.Mp3)
         {
             _readerStream = new Mp3FileReader(sourceStream);
         }
-        else if (waveType == WaveType.Ogg)
+        else if (fileFormat == FileFormat.Ogg)
         {
             _readerStream = new VorbisWaveReader(sourceStream);
         }
-        else if (waveType == WaveType.Aiff)
+        else if (fileFormat == FileFormat.Aiff)
         {
             _readerStream = new AiffFileReader(sourceStream);
         }
