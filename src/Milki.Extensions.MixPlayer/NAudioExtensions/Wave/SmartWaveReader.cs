@@ -7,7 +7,6 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 
 public class SmartWaveReader : WaveStream, ISampleProvider
 {
-    private WaveStream? _readerStream;
     private readonly NAudio.Wave.SampleProviders.SampleChannel _sampleChannel;
     private readonly int _destBytesPerSample;
     private readonly int _sourceBytesPerSample;
@@ -39,10 +38,10 @@ public class SmartWaveReader : WaveStream, ISampleProvider
         }
 
         CreateReaderStream(_stream);
-        _sourceBytesPerSample = (_readerStream!.WaveFormat.BitsPerSample / 8) * _readerStream.WaveFormat.Channels;
-        _sampleChannel = new NAudio.Wave.SampleProviders.SampleChannel(_readerStream, false);
+        _sourceBytesPerSample = (ReaderStream!.WaveFormat.BitsPerSample / 8) * ReaderStream.WaveFormat.Channels;
+        _sampleChannel = new NAudio.Wave.SampleProviders.SampleChannel(ReaderStream, false);
         _destBytesPerSample = 4 * _sampleChannel.WaveFormat.Channels;
-        _length = SourceToDest(_readerStream.Length);
+        _length = SourceToDest(ReaderStream.Length);
     }
 
     /// <summary>
@@ -61,12 +60,17 @@ public class SmartWaveReader : WaveStream, ISampleProvider
     public override long Length => _length;
 
     /// <summary>
+    /// Actual based WaveStream 
+    /// </summary>
+    public WaveStream? ReaderStream { get; private set; }
+
+    /// <summary>
     /// Position of this stream (in bytes)
     /// </summary>
     public override long Position
     {
-        get => SourceToDest(_readerStream!.Position);
-        set { lock (_lockObject) _readerStream!.Position = DestToSource(value); }
+        get => SourceToDest(ReaderStream!.Position);
+        set { lock (_lockObject) ReaderStream!.Position = DestToSource(value); }
     }
 
     public float Volume
@@ -92,10 +96,10 @@ public class SmartWaveReader : WaveStream, ISampleProvider
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing && _readerStream != null)
+        if (disposing && ReaderStream != null)
         {
-            _readerStream.Dispose();
-            _readerStream = null;
+            ReaderStream.Dispose();
+            ReaderStream = null;
             _stream.Dispose();
         }
 
@@ -109,27 +113,27 @@ public class SmartWaveReader : WaveStream, ISampleProvider
 
         if (fileFormat == FileFormat.Wav)
         {
-            _readerStream = new WaveFileReader(sourceStream);
-            if (_readerStream.WaveFormat.Encoding is WaveFormatEncoding.Pcm or WaveFormatEncoding.IeeeFloat)
+            ReaderStream = new WaveFileReader(sourceStream);
+            if (ReaderStream.WaveFormat.Encoding is WaveFormatEncoding.Pcm or WaveFormatEncoding.IeeeFloat)
                 return;
-            _readerStream = WaveFormatConversionStream.CreatePcmStream(_readerStream);
-            _readerStream = new BlockAlignReductionStream(_readerStream);
+            ReaderStream = WaveFormatConversionStream.CreatePcmStream(ReaderStream);
+            ReaderStream = new BlockAlignReductionStream(ReaderStream);
         }
         else if (fileFormat == FileFormat.Mp3)
         {
-            _readerStream = new Mp3FileReader(sourceStream);
+            ReaderStream = new NLayerMp3FileReader(sourceStream);
         }
         else if (fileFormat == FileFormat.Ogg)
         {
-            _readerStream = new VorbisWaveReader(sourceStream);
+            ReaderStream = new VorbisWaveReader(sourceStream);
         }
         else if (fileFormat == FileFormat.Aiff)
         {
-            _readerStream = new AiffFileReader(sourceStream);
+            ReaderStream = new AiffFileReader(sourceStream);
         }
         else
         {
-            _readerStream = new StreamMediaFoundationReader(sourceStream);
+            ReaderStream = new StreamMediaFoundationReader(sourceStream);
         }
     }
 

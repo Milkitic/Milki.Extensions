@@ -1,17 +1,16 @@
-﻿
-using System.IO;
-using NAudio.FileFormats.Mp3;
+﻿using System.IO;
 using NAudio.Wave;
+using NLayer.NAudioSupport;
 
 namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 
 /// <summary>
 /// Class for reading from MP3 files
 /// </summary>
-public class Mp3FileReader : Mp3FileReaderBase
+public class NLayerMp3FileReader : Mp3FileReaderBase
 {
     /// <summary>Supports opening a MP3 file</summary>
-    public Mp3FileReader(string mp3FileName)
+    public NLayerMp3FileReader(string mp3FileName)
         : base(File.OpenRead(mp3FileName), CreateAcmFrameDecompressor, true)
     {
     }
@@ -21,20 +20,14 @@ public class Mp3FileReader : Mp3FileReaderBase
     /// Will not dispose of this stream itself
     /// </summary>
     /// <param name="inputStream">The incoming stream containing MP3 data</param>
-    public Mp3FileReader(Stream inputStream)
+    public NLayerMp3FileReader(Stream inputStream)
         : base(inputStream, CreateAcmFrameDecompressor, false)
     {
 
     }
 
-    /// <summary>
-    /// Creates an ACM MP3 Frame decompressor. This is the default with NAudio
-    /// </summary>
-    /// <param name="mp3Format">A WaveFormat object based </param>
-    /// <returns></returns>
-    public static IMp3FrameDecompressor CreateAcmFrameDecompressor(WaveFormat mp3Format)
+    private static IMp3FrameDecompressor CreateAcmFrameDecompressor(WaveFormat mp3Format)
     {
-        return new DmoMp3FrameDecompressor(mp3Format);
-        //return new AcmMp3FrameDecompressor(mp3Format);
+        return new Mp3FrameDecompressor(mp3Format);
     }
 }
