@@ -161,16 +161,19 @@ public static class FileFormatHelper
         new("OGG", FileFormat.Ogg,
             new MatchRule(0x4F, 0x67, 0x67, 0x53)
         ),
-        new("MP3_1", FileFormat.Mp3,
+        new("MP3_FA", FileFormat.Mp3,
+            new MatchRule(0xFF, 0xFA)
+        ),
+        new("MP3_FB", FileFormat.Mp3,
             new MatchRule(0xFF, 0xFB)
         ),
-        new("MP3_2", FileFormat.Mp3,
+        new("MP3_F3", FileFormat.Mp3,
             new MatchRule(0xFF, 0xF3)
         ),
-        new("MP3_3", FileFormat.Mp3,
+        new("MP3_F2", FileFormat.Mp3,
             new MatchRule(0xFF, 0xF2)
         ),
-        new("MP3(32kbps)", FileFormat.Mp3,
+        new("MP3_E3", FileFormat.Mp3,
             new MatchRule(0xFF, 0xE3)
         ),
         new("MP3_ID3", FileFormat.Mp3,
