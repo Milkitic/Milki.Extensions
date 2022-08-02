@@ -8,11 +8,11 @@ namespace Milki.Extensions.MixPlayer.Subchannels;
 internal sealed class LoopProvider : IDisposable
 {
     private readonly BalanceSampleProvider _balanceProvider;
-    private readonly VolumeSampleProvider _volumeProvider;
+    private readonly EnhancedVolumeSampleProvider _volumeProvider;
     private readonly MemoryStream _loopStream;
 
     public LoopProvider(BalanceSampleProvider balanceProvider,
-        VolumeSampleProvider volumeProvider,
+        EnhancedVolumeSampleProvider volumeProvider,
         MemoryStream loopStream)
     {
         _balanceProvider = balanceProvider;

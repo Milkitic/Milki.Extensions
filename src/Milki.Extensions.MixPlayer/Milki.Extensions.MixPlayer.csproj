@@ -5,6 +5,7 @@
     <PackageLicenseExpression>LGPL-2.1-only</PackageLicenseExpression>
     <Description>This library is for timelined sound effects playing.</Description>
     <IsTrimmable>True</IsTrimmable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>

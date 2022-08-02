@@ -92,9 +92,9 @@ internal static class MixingSampleProviderExtension
         mixer.AddMixerInput(new CachedSoundSampleProvider(sound), volume, balance, out rootSample);
     }
 
-    private static VolumeSampleProvider AddToAdjustVolume(this ISampleProvider input, float volume)
+    private static EnhancedVolumeSampleProvider AddToAdjustVolume(this ISampleProvider input, float volume)
     {
-        var volumeSampleProvider = new VolumeSampleProvider(input)
+        var volumeSampleProvider = new EnhancedVolumeSampleProvider(input)
         {
             Volume = volume
         };

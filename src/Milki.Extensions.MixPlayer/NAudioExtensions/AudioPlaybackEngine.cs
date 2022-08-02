@@ -19,7 +19,7 @@ public class AudioPlaybackEngine : IDisposable, INotifyPropertyChanged
 
     public event PlaybackTimingChangedEvent? Updated;
 
-    private VolumeSampleProvider? _volumeProvider;
+    private EnhancedVolumeSampleProvider? _volumeProvider;
     private TimingSampleProvider? _timingProvider;
 
     public AudioPlaybackEngine(IWavePlayer? outputDevice, int sampleRate = 44100, int channelCount = 2,
@@ -122,7 +122,7 @@ public class AudioPlaybackEngine : IDisposable, INotifyPropertyChanged
 
         if (enableVolume)
         {
-            _volumeProvider = new VolumeSampleProvider(root);
+            _volumeProvider = new EnhancedVolumeSampleProvider(root);
             root = _volumeProvider;
         }
 

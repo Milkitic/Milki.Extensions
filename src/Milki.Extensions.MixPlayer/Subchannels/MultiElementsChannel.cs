@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Milki.Extensions.MixPlayer.NAudioExtensions;
+using Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 using Milki.Extensions.MixPlayer.Utilities;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
@@ -24,7 +25,7 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
     //protected readonly SingleMediaChannel? ReferenceChannel;
     private ConcurrentQueue<SoundElement>? _soundElementsQueue;
 
-    private VolumeSampleProvider? _volumeProvider;
+    private EnhancedVolumeSampleProvider? _volumeProvider;
 
     private Task? _playingTask;
     //private Task _calibrationTask;
@@ -88,7 +89,7 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
             {
                 ReadFully = true
             };
-            _volumeProvider = new VolumeSampleProvider(Submixer);
+            _volumeProvider = new EnhancedVolumeSampleProvider(Submixer);
             Engine.AddMixerInput(_volumeProvider);
         }
 
