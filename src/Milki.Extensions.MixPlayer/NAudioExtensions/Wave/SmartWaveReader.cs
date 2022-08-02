@@ -178,7 +178,15 @@ public class SmartWaveReader : WaveStream, ISampleProvider
         }
         else
         {
-            ReaderStream = new StreamMediaFoundationReader(sourceStream);
+            var os = Environment.OSVersion;
+            if (os.Platform == PlatformID.Win32NT && os.Version.Major >= 6) // Vista
+            {
+                ReaderStream = new StreamMediaFoundationReader(sourceStream);
+            }
+            else
+            {
+                throw new NotSupportedException("No available generic media reader for OS: " + os.VersionString + ".");
+            }
         }
     }
 
