@@ -180,7 +180,7 @@ public static class FileFormatHelper
         new("MP3_E3", FileFormat.Mp3,
             new MatchRule(0xFF, 0xE3)
         ),
-        new("MP3_ID3", FileFormat.Mp3,
+        new("MP3_ID3", FileFormat.Mp3Id3,
             new MatchRule(0x49, 0x44, 0x33)
         ),
         new("FLAC", FileFormat.Flac,

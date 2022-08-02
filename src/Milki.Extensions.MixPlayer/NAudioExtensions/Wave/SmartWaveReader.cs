@@ -11,9 +11,8 @@ public class SmartWaveReader : WaveStream, ISampleProvider
     private readonly NAudio.Wave.SampleProviders.SampleChannel _sampleChannel;
     private readonly int _destBytesPerSample;
     private readonly int _sourceBytesPerSample;
-    private readonly long _length;
     private readonly object _lockObject;
-    private readonly Stream _stream;
+    private Stream _stream;
     private bool _isDisposed;
     private WaveStream _readerStream = null!;
 
@@ -44,7 +43,7 @@ public class SmartWaveReader : WaveStream, ISampleProvider
         _sourceBytesPerSample = (ReaderStream.WaveFormat.BitsPerSample / 8) * ReaderStream.WaveFormat.Channels;
         _sampleChannel = new NAudio.Wave.SampleProviders.SampleChannel(ReaderStream, false);
         _destBytesPerSample = 4 * _sampleChannel.WaveFormat.Channels;
-        _length = SourceToDest(ReaderStream.Length);
+        Length = SourceToDest(ReaderStream.Length);
     }
 
     /// <summary>
@@ -60,7 +59,7 @@ public class SmartWaveReader : WaveStream, ISampleProvider
     /// <summary>
     /// Length of this stream (in bytes)
     /// </summary>
-    public override long Length => _length;
+    public override long Length { get; }
 
     /// <summary>
     /// Actual based WaveStream 
@@ -119,10 +118,10 @@ public class SmartWaveReader : WaveStream, ISampleProvider
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing && ReaderStream != null)
+        if (disposing && ReaderStream != null!)
         {
             ReaderStream.Dispose();
-            ReaderStream = null;
+            ReaderStream = null!;
             _stream.Dispose();
             _isDisposed = true;
         }
@@ -142,6 +141,28 @@ public class SmartWaveReader : WaveStream, ISampleProvider
                 return;
             ReaderStream = WaveFormatConversionStream.CreatePcmStream(ReaderStream);
             ReaderStream = new BlockAlignReductionStream(ReaderStream);
+        }
+        else if (fileFormat == FileFormat.Mp3Id3)
+        {
+            // To fix NAudio's known issue: https://github.com/naudio/NAudio/issues/763
+            var memoryStream = new MemoryStream();
+            using (sourceStream)
+            {
+                sourceStream.CopyTo(memoryStream);
+            }
+
+            memoryStream.Seek(0, SeekOrigin.Begin);
+
+            var fileAbstraction = new StreamFileAbstraction(memoryStream, FileName);
+            using (var file = TagLib.File.Create(fileAbstraction, "taglib/mp3", TagLib.ReadStyle.Average))
+            {
+                file.RemoveTags(TagLib.TagTypes.AllTags);
+                file.Save();
+            }
+
+            memoryStream.Seek(0, SeekOrigin.Begin);
+            _stream = memoryStream;
+            ReaderStream = new NLayerMp3FileReader(memoryStream);
         }
         else if (fileFormat == FileFormat.Mp3)
         {

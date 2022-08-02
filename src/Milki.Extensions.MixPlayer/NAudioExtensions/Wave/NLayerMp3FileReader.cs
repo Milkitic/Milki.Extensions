@@ -11,7 +11,7 @@ public class NLayerMp3FileReader : Mp3FileReaderBase
 {
     /// <summary>Supports opening a MP3 file</summary>
     public NLayerMp3FileReader(string mp3FileName)
-        : base(File.OpenRead(mp3FileName), CreateAcmFrameDecompressor, true)
+        : base(File.OpenRead(mp3FileName), CreateNLayerFrameDecompressor, true)
     {
     }
 
@@ -21,12 +21,12 @@ public class NLayerMp3FileReader : Mp3FileReaderBase
     /// </summary>
     /// <param name="inputStream">The incoming stream containing MP3 data</param>
     public NLayerMp3FileReader(Stream inputStream)
-        : base(inputStream, CreateAcmFrameDecompressor, false)
+        : base(inputStream, CreateNLayerFrameDecompressor, false)
     {
 
     }
 
-    private static IMp3FrameDecompressor CreateAcmFrameDecompressor(WaveFormat mp3Format)
+    private static IMp3FrameDecompressor CreateNLayerFrameDecompressor(WaveFormat mp3Format)
     {
         return new Mp3FrameDecompressor(mp3Format);
     }

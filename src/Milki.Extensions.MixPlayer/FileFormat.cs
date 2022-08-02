@@ -3,5 +3,5 @@
 public enum FileFormat
 {
     Wav, Mp3, Ogg, Aiff, Others,
-    Flac, Wma
+    Flac, Wma, Mp3Id3
 }
