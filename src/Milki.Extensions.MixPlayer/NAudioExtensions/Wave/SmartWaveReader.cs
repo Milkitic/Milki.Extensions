@@ -8,6 +8,7 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 
 public class SmartWaveReader : WaveStream, ISampleProvider
 {
+    private readonly bool _platformCompatible;
     private readonly NAudio.Wave.SampleProviders.SampleChannel _sampleChannel;
     private readonly int _destBytesPerSample;
     private readonly int _sourceBytesPerSample;
@@ -16,17 +17,19 @@ public class SmartWaveReader : WaveStream, ISampleProvider
     private bool _isDisposed;
     private WaveStream _readerStream = null!;
 
-    public SmartWaveReader(string fileName)
-        : this(File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.Read))
+    public SmartWaveReader(string fileName, bool platformCompatible = false)
+        : this(File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.Read), platformCompatible)
     {
     }
 
-    public SmartWaveReader(byte[] buffer) : this(new MemoryStream(buffer))
+    public SmartWaveReader(byte[] buffer, bool platformCompatible = false)
+        : this(new MemoryStream(buffer), platformCompatible)
     {
     }
 
-    public SmartWaveReader(Stream stream)
+    public SmartWaveReader(Stream stream, bool platformCompatible = false)
     {
+        _platformCompatible = platformCompatible;
         _lockObject = new object();
         _stream = stream.CanSeek ? stream : new ReadSeekableStream(stream, 4096);
         _stream.Seek(0, SeekOrigin.Begin);
@@ -138,31 +141,41 @@ public class SmartWaveReader : WaveStream, ISampleProvider
         {
             ReaderStream = new WaveFileReader(sourceStream);
             if (ReaderStream.WaveFormat.Encoding is WaveFormatEncoding.Pcm or WaveFormatEncoding.IeeeFloat)
+            {
                 return;
+            }
+
             ReaderStream = WaveFormatConversionStream.CreatePcmStream(ReaderStream);
             ReaderStream = new BlockAlignReductionStream(ReaderStream);
         }
         else if (fileFormat == FileFormat.Mp3Id3)
         {
-            // To fix NAudio's known issue: https://github.com/naudio/NAudio/issues/763
-            var memoryStream = new MemoryStream();
-            using (sourceStream)
+            if (_platformCompatible)
             {
-                sourceStream.CopyTo(memoryStream);
+                // To fix NAudio's known issue: https://github.com/naudio/NAudio/issues/763
+                var memoryStream = new MemoryStream();
+                using (sourceStream)
+                {
+                    sourceStream.CopyTo(memoryStream);
+                }
+
+                memoryStream.Seek(0, SeekOrigin.Begin);
+
+                var fileAbstraction = new StreamFileAbstraction(memoryStream, FileName);
+                using (var file = TagLib.File.Create(fileAbstraction, "taglib/mp3", TagLib.ReadStyle.Average))
+                {
+                    file.RemoveTags(TagLib.TagTypes.AllTags);
+                    file.Save();
+                }
+
+                memoryStream.Seek(0, SeekOrigin.Begin);
+                _stream = memoryStream;
+                ReaderStream = new NLayerMp3FileReader(memoryStream);
             }
-
-            memoryStream.Seek(0, SeekOrigin.Begin);
-
-            var fileAbstraction = new StreamFileAbstraction(memoryStream, FileName);
-            using (var file = TagLib.File.Create(fileAbstraction, "taglib/mp3", TagLib.ReadStyle.Average))
+            else
             {
-                file.RemoveTags(TagLib.TagTypes.AllTags);
-                file.Save();
+                ReaderStream = new StreamMediaFoundationReader(sourceStream);
             }
-
-            memoryStream.Seek(0, SeekOrigin.Begin);
-            _stream = memoryStream;
-            ReaderStream = new NLayerMp3FileReader(memoryStream);
         }
         else if (fileFormat == FileFormat.Mp3)
         {

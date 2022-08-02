@@ -4,6 +4,7 @@
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
     <PackageLicenseExpression>LGPL-2.1-only</PackageLicenseExpression>
     <Description>This library is for timelined sound effects playing.</Description>
+    <IsTrimmable>True</IsTrimmable>
   </PropertyGroup>
 
   <ItemGroup>

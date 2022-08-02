@@ -2,8 +2,10 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
-    <Nullable>enable</Nullable>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Description>This library is for mouse/keyboard hooking on Windows platform.</Description>
+    <Nullable>enable</Nullable>
+    <IsTrimmable>True</IsTrimmable>
   </PropertyGroup>
 
 </Project>
