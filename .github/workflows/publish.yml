@@ -25,6 +25,7 @@ jobs:
     - name: dotnet Publish
       run: |
         echo ${{ github.ref }}      
+        dotnet pack src/Milki.Extensions.Configuration --configuration Release --output ci-pack-Milki.Extensions.Configuration
         dotnet pack src/Milki.Extensions.MixPlayer --configuration Release --output ci-pack-Milki.Extensions.MixPlayer
         dotnet pack src/Milki.Extensions.MouseKeyHook --configuration Release --output ci-pack-Milki.Extensions.MouseKeyHook
         
@@ -45,8 +46,19 @@ jobs:
         prerelease: true
         draft: false
         files: |
+          ./ci-pack-Milki.Extensions.Configuration/Milki.Extensions.Configuration.${{ steps.version.outputs.version }}.nupkg
           ./ci-pack-Milki.Extensions.MixPlayer/Milki.Extensions.MixPlayer.${{ steps.version.outputs.version }}.nupkg
           ./ci-pack-Milki.Extensions.MouseKeyHook/Milki.Extensions.MouseKeyHook.${{ steps.version.outputs.version }}.nupkg
+
+    - name: Nuget Publish Milki.Extensions.MixPlayer
+      uses: Rebel028/publish-nuget@v2.7.0
+      if: ${{ success() }}
+      with:
+        PROJECT_FILE_PATH: src/Milki.Extensions.Configuration/Milki.Extensions.Configuration.csproj
+        VERSION_STATIC: ${{ steps.version.outputs.version }}
+        NUGET_KEY: ${{secrets.NUGET_API_KEY}}
+        GITHUB_USER: Milkitic
+        TAG_COMMIT: false
 
     - name: Nuget Publish Milki.Extensions.MixPlayer
       uses: Rebel028/publish-nuget@v2.7.0
