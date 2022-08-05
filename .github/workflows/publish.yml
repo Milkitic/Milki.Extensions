@@ -43,7 +43,7 @@ jobs:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
       with:
         name: v${{ steps.version.outputs.version }}
-        prerelease: true
+        prerelease: false
         draft: false
         files: |
           ./ci-pack-Milki.Extensions.Configuration/Milki.Extensions.Configuration.${{ steps.version.outputs.version }}.nupkg
