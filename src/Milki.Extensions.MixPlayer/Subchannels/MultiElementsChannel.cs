@@ -310,10 +310,14 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
                             _loopProviders.RemoveAll(Submixer);
                         }
 
-                        await _loopProviders.CreateAsync(soundElement, Submixer!, BalanceFactor).ConfigureAwait(false);
+                        _loopProviders.Create(soundElement, null, Submixer!, soundElement.Volume, BalanceFactor);
                         break;
                     case SoundNode.StopLoop:
-                        _loopProviders.Remove(soundElement.LoopChannel, Submixer);
+                        if (soundElement.LoopChannel != null)
+                        {
+                            _loopProviders.Remove(soundElement.LoopChannel.Value, Submixer);
+                        }
+
                         break;
                     case SoundNode.ChangeBalance:
                         _loopProviders.ChangeAllBalances(soundElement.Balance * BalanceFactor);

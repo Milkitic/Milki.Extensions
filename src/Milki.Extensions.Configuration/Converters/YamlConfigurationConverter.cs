@@ -7,7 +7,7 @@ namespace Milki.Extensions.Configuration.Converters;
 
 public class YamlConfigurationConverter : IConfigurationConverter
 {
-    public object DeserializeSettings(string content, Type type)
+    public virtual object DeserializeSettings(string content, Type type)
     {
         var builder = new DeserializerBuilder()
             .WithNamingConvention(PascalCaseNamingConvention.Instance)
@@ -22,7 +22,7 @@ public class YamlConfigurationConverter : IConfigurationConverter
         return ymlDeserializer.Deserialize(content, type)!;
     }
 
-    public string SerializeSettings(object obj)
+    public virtual string SerializeSettings(object obj)
     {
         var builder = new SerializerBuilder()
             .WithNamingConvention(PascalCaseNamingConvention.Instance)
@@ -101,7 +101,7 @@ public class YamlConfigurationConverter : IConfigurationConverter
 
         vsb.Append(')');
         return vsb.ToString();
-        
+
         //var result = fullName + "<" + string.Join(",", args.Select(GetStandardGenericName)) + ">";
         //return result;
     }

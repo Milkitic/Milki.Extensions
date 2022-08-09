@@ -4,7 +4,7 @@ namespace Milki.Extensions.Configuration.Converters;
 
 public class JsonConfigurationConverter : IConfigurationConverter
 {
-    public object DeserializeSettings(string content, Type type)
+    public virtual object DeserializeSettings(string content, Type type)
     {
         var obj = JsonConvert.DeserializeObject(content, type,
             new JsonSerializerSettings
@@ -15,7 +15,7 @@ public class JsonConfigurationConverter : IConfigurationConverter
         return obj!;
     }
 
-    public string SerializeSettings(object obj)
+    public virtual  string SerializeSettings(object obj)
     {
         var content = JsonConvert.SerializeObject(obj, new JsonSerializerSettings
         {

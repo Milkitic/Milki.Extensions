@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
@@ -18,59 +18,50 @@ internal class LoopProviders
         return _dictionary.ContainsKey(channel);
     }
 
-    public bool ChangeAllVolumes(float volume)
+    public bool ChangeAllVolumes(float volume, float volumeFactor = 1.25f)
     {
         foreach (var kvp in _dictionary.ToList())
         {
             var channel = kvp.Key;
             var loopProvider = kvp.Value;
-            loopProvider.SetVolume(volume);
+            loopProvider.SetVolume(volume * volumeFactor);
         }
         return true;
     }
 
-    public bool ChangeAllBalances(float balance)
+    public bool ChangeAllBalances(float balance, float balanceFactor = 1)
     {
         foreach (var kvp in _dictionary.ToList())
         {
             var channel = kvp.Key;
             var loopProvider = kvp.Value;
-            loopProvider.SetBalance(balance);
+            loopProvider.SetBalance(balance * balanceFactor);
         }
 
         return true;
     }
 
-    public bool ChangeVolume(int? loopChannel, float volume)
+    public bool ChangeVolume(int channel, float volume, float volumeFactor = 1.25f)
     {
-        if (loopChannel == null) return false;
-        var lc = loopChannel.Value;
-        if (!_dictionary.TryGetValue(lc, out var loopProvider)) return false;
-        loopProvider.SetVolume(volume);
+        if (!_dictionary.TryGetValue(channel, out var loopProvider)) return false;
+        loopProvider.SetVolume(volume * volumeFactor);
         return true;
     }
 
-    public bool ChangeBalance(int? loopChannel, float balance)
+    public bool ChangeBalance(int channel, float balance, float balanceFactor = 1)
     {
-        if (loopChannel == null) return false;
-        var lc = loopChannel.Value;
-        if (!_dictionary.TryGetValue(lc, out var loopProvider)) return false;
-        loopProvider.SetBalance(balance);
+        if (!_dictionary.TryGetValue(channel, out var loopProvider)) return false;
+        loopProvider.SetBalance(balance * balanceFactor);
         return true;
     }
 
-    public bool Remove(int? loopChannel, MixingSampleProvider? mixer)
+    public bool Remove(int soundElement, MixingSampleProvider? mixer)
     {
-        if (loopChannel == null) return false;
-        var lc = loopChannel.Value;
-        if (_dictionary.TryGetValue(lc, out var loopProvider))
-        {
-            loopProvider.RemoveFrom(mixer);
-            loopProvider.Dispose();
-            return _dictionary.Remove(lc);
-        }
+        if (!_dictionary.TryGetValue(soundElement, out var loopProvider)) return false;
+        loopProvider.RemoveFrom(mixer);
+        loopProvider.Dispose();
+        return _dictionary.Remove(soundElement);
 
-        return false;
     }
 
     public void RemoveAll(MixingSampleProvider? mixer)
@@ -86,30 +77,59 @@ internal class LoopProviders
         }
     }
 
-    public async Task CreateAsync(SoundElement soundElement, MixingSampleProvider mixer, float balanceFactor = 1)
+    public void PauseAll(MixingSampleProvider? mixer)
     {
-        var cachedSound = await soundElement.GetCachedSoundAsync(mixer.WaveFormat);
-        if (cachedSound is null || soundElement.LoopChannel is null) return;
+        foreach (var kvp in _dictionary)
+        {
+            var channel = kvp.Key;
+            var loopProvider = kvp.Value;
 
-        var loopChannel = soundElement.LoopChannel.Value;
-        Remove(loopChannel, mixer);
+            loopProvider.RemoveFrom(mixer);
+        }
+    }
 
-        var byteArray = new byte[cachedSound.AudioData.Length * sizeof(float)];
-        Buffer.BlockCopy(cachedSound.AudioData, 0, byteArray, 0, byteArray.Length);
+    public void RecoverAll(MixingSampleProvider? mixer)
+    {
+        foreach (var kvp in _dictionary)
+        {
+            var channel = kvp.Key;
+            var loopProvider = kvp.Value;
 
-        var memoryStream = new MemoryStream(byteArray);
+            loopProvider.AddTo(mixer);
+        }
+    }
+
+    public void Create(SoundElement controlNode,
+        CachedSound? cachedSound,
+        MixingSampleProvider mixer,
+        float volume,
+        float balance,
+        float volumeFactor = 1.25f,
+        float balanceFactor = 1)
+    {
+        if (cachedSound is null) return;
+        if (controlNode.LoopChannel == null) return;
+        var slideChannel = controlNode.LoopChannel.Value;
+        Remove(slideChannel, mixer);
+
+        var audioDataLength = cachedSound.AudioData.Length * sizeof(float);
+        var byteArray = ArrayPool<byte>.Shared.Rent(audioDataLength);
+        Buffer.BlockCopy(cachedSound.AudioData, 0, byteArray, 0, audioDataLength);
+
+        var memoryStream = new MemoryStream(byteArray, 0, audioDataLength);
         var waveStream = new RawSourceWaveStream(memoryStream, cachedSound.WaveFormat);
         var loopStream = new LoopStream(waveStream);
         var volumeProvider = new EnhancedVolumeSampleProvider(loopStream.ToSampleProvider())
         {
-            Volume = soundElement.Volume
+            Volume = volume * volumeFactor
         };
         var balanceProvider = new BalanceSampleProvider(volumeProvider)
         {
-            Balance = soundElement.Balance * balanceFactor
+            Balance = balance * balanceFactor
         };
 
-        _dictionary.Add(loopChannel, new LoopProvider(balanceProvider, volumeProvider, memoryStream));
-        mixer?.AddMixerInput(balanceProvider);
+        var loopProvider = new LoopProvider(balanceProvider, volumeProvider, memoryStream, waveStream, loopStream, byteArray);
+        _dictionary.Add(slideChannel, loopProvider);
+        loopProvider.AddTo(mixer);
     }
 }
