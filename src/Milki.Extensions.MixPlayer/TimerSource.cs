@@ -12,7 +12,6 @@ public class TimerSource
     private readonly Stopwatch _stopwatch;
     private double _offset;
     private CancellationTokenSource? _cts;
-    private Task? _task;
 
     public TimerSource(double notifyIntervalMillisecond = 1)
     {
@@ -34,19 +33,11 @@ public class TimerSource
     {
         var created = _stopwatch.IsRunning;
         _stopwatch.Start();
+        Updated?.Invoke(ElapsedMilliseconds);
         if (!created)
         {
             CreateTask();
         }
-    }
-
-    private void CreateTask()
-    {
-        _cts = new CancellationTokenSource();
-        _task = Task.Run(() =>
-        {
-            TimerLoop();
-        });
     }
 
     public void Stop()
@@ -55,19 +46,22 @@ public class TimerSource
         if (_cts != null)
         {
             _cts.Cancel();
-            _cts.Dispose();
+            _cts = null;
         }
     }
 
     public void Restart()
     {
         _offset = 0;
-        var created = _stopwatch.IsRunning;
         _stopwatch.Restart();
-        if (!created)
+        Updated?.Invoke(ElapsedMilliseconds);
+        if (_cts != null)
         {
-            CreateTask();
+            _cts.Cancel();
+            _cts = null;
         }
+
+        CreateTask();
     }
 
     public void Reset()
@@ -77,7 +71,7 @@ public class TimerSource
         if (_cts != null)
         {
             _cts.Cancel();
-            _cts.Dispose();
+            _cts = null;
         }
     }
 
@@ -94,19 +88,20 @@ public class TimerSource
         }
     }
 
-    private void TimerLoop()
+    private void TimerLoop(CancellationTokenSource cts)
     {
-        double lastTime = _stopwatch.ElapsedMilliseconds;
+        double loopLastTime = _stopwatch.Elapsed.TotalMilliseconds * Rate + _offset;
+        Updated?.Invoke(loopLastTime);
         var spinWait = new SpinWait();
-        while (_cts?.IsCancellationRequested == false)
+        while (!cts.IsCancellationRequested)
         {
             if (_stopwatch.IsRunning)
             {
-                var elapsedMilliseconds = _stopwatch.ElapsedMilliseconds;
-                if (elapsedMilliseconds - lastTime > NotifyIntervalMillisecond)
+                var elapsedMilliseconds = _stopwatch.Elapsed.TotalMilliseconds * Rate + _offset;
+                if (elapsedMilliseconds - loopLastTime > NotifyIntervalMillisecond)
                 {
-                    Updated?.Invoke(elapsedMilliseconds * Rate + _offset);
-                    lastTime = elapsedMilliseconds;
+                    Updated?.Invoke(elapsedMilliseconds);
+                    loopLastTime = elapsedMilliseconds;
                 }
             }
             else
@@ -116,5 +111,13 @@ public class TimerSource
 
             spinWait.SpinOnce();
         }
+
+        cts.Dispose();
+    }
+
+    private void CreateTask()
+    {
+        _cts = new CancellationTokenSource();
+        Task.Run(() => TimerLoop(_cts));
     }
 }
