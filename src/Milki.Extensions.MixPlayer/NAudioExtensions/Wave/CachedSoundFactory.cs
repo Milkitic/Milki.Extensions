@@ -49,13 +49,13 @@ public static class CachedSoundFactory
     }
 
     public static async Task<CachedSound?> GetOrCreateCacheSound(WaveFormat waveFormat, string? path,
-        string? identifier = null, bool checkFileExist = true)
+        string? identifier = null, bool checkFileExist = true, bool useWdlResampler = false)
     {
-        return (await GetOrCreateCacheSoundStatus(waveFormat, path, identifier, checkFileExist)).cachedSound;
+        return (await GetOrCreateCacheSoundStatus(waveFormat, path, identifier, checkFileExist, useWdlResampler)).cachedSound;
     }
 
     public static async Task<(CachedSound? cachedSound, bool? cacheStatus)> GetOrCreateCacheSoundStatus(
-        WaveFormat waveFormat, string? path, string? identifier = null, bool checkFileExist = true)
+        WaveFormat waveFormat, string? path, string? identifier = null, bool checkFileExist = true, bool useWdlResampler = false)
     {
         if (path == null) return (null, false);
         var dict = IdentifiersDictionary.GetOrAdd(identifier ?? "default",
@@ -75,7 +75,7 @@ public static class CachedSoundFactory
         CachedSound cachedSound;
         try
         {
-            cachedSound = await CreateCacheFromFile(waveFormat, path).ConfigureAwait(false);
+            cachedSound = await CreateCacheFromFile(waveFormat, path, useWdlResampler).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -104,7 +104,7 @@ public static class CachedSoundFactory
         }
     }
 
-    private static async Task<CachedSound> CreateCacheFromFile(WaveFormat waveFormat, string filePath, bool useWdlResampler = false)
+    private static async Task<CachedSound> CreateCacheFromFile(WaveFormat waveFormat, string filePath, bool useWdlResampler)
     {
         using var audioFileReader = await ResampleHelper
             .GetResampledSmartWaveReader(filePath, waveFormat, useWdlResampler).ConfigureAwait(false);
