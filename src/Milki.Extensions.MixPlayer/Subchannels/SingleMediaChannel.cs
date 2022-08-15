@@ -53,7 +53,7 @@ public class SingleMediaChannel : Subchannel
 
     public override async Task Initialize()
     {
-        _fileReader = await ResampleHelper.GetResampledAudioFileReader(_path, Engine.FileWaveFormat).ConfigureAwait(false);
+        _fileReader = await ResampleHelper.GetResampledSmartWaveReader(_path, Engine.FileWaveFormat).ConfigureAwait(false);
 
         _speedProvider = new VariableSpeedSampleProvider(_fileReader,
             10,

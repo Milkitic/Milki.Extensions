@@ -39,7 +39,7 @@ public class SmartWaveReader : WaveStream, ISampleProvider
         }
         else
         {
-            FileName = "stream";
+            FileName = "stream" + Guid.NewGuid();
         }
 
         CreateReaderStream(_stream);

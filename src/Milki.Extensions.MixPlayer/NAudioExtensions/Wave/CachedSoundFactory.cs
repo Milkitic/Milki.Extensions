@@ -104,9 +104,10 @@ public static class CachedSoundFactory
         }
     }
 
-    private static async Task<CachedSound> CreateCacheFromFile(WaveFormat waveFormat, string filePath)
+    private static async Task<CachedSound> CreateCacheFromFile(WaveFormat waveFormat, string filePath, bool useWdlResampler = false)
     {
-        using var audioFileReader = await ResampleHelper.GetResampledAudioFileReader(filePath, waveFormat).ConfigureAwait(false);
+        using var audioFileReader = await ResampleHelper
+            .GetResampledSmartWaveReader(filePath, waveFormat, useWdlResampler).ConfigureAwait(false);
         var sw = Stopwatch.StartNew();
         var wholeData = new float[(int)(audioFileReader.Length / 4)];
         var actualWaveFormat = audioFileReader.WaveFormat;
