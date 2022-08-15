@@ -1,10 +1,11 @@
-﻿// from https://github.com/naudio/NAudio/blob/56e9419325d20524cf749ed362ada5066178feaa/NAudio/Wave/SampleProviders/VolumeSampleProvider.cs
+﻿// Modified from https://github.com/naudio/NAudio/blob/56e9419325d20524cf749ed362ada5066178feaa/NAudio/Wave/SampleProviders/VolumeSampleProvider.cs
 
 #if NETCOREAPP3_1_OR_GREATER
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 #endif
 
+using System;
 using NAudio.Wave;
 
 namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
@@ -14,22 +15,25 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 /// </summary>
 public class EnhancedVolumeSampleProvider : ISampleProvider
 {
-    private readonly ISampleProvider source;
-
     /// <summary>
     /// Initializes a new instance of VolumeSampleProvider
     /// </summary>
     /// <param name="source">Source Sample Provider</param>
     public EnhancedVolumeSampleProvider(ISampleProvider source)
     {
-        this.source = source;
+        Source = source;
         Volume = 1.0f;
     }
 
     /// <summary>
+    /// Source Sample Provider
+    /// </summary>
+    public ISampleProvider? Source { get; set; }
+
+    /// <summary>
     /// WaveFormat
     /// </summary>
-    public WaveFormat WaveFormat => source.WaveFormat;
+    public WaveFormat WaveFormat => Source?.WaveFormat ?? throw new InvalidOperationException("Source not ready");
 
     /// <summary>
     /// Reads samples from this sample provider
@@ -40,7 +44,13 @@ public class EnhancedVolumeSampleProvider : ISampleProvider
     /// <returns>Number of samples read</returns>
     public int Read(float[] buffer, int offset, int sampleCount)
     {
-        int samplesRead = source.Read(buffer, offset, sampleCount);
+        if (Source == null)
+        {
+            Array.Clear(buffer, offset, sampleCount);
+            return sampleCount;
+        }
+
+        int samplesRead = Source.Read(buffer, offset, sampleCount);
         if (Volume != 1f)
         {
 #if NETCOREAPP3_1_OR_GREATER
