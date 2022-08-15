@@ -66,7 +66,7 @@ public static class CachedSoundFactory
             return (value, null);
         }
 
-        if (checkFileExist && !File.Exists(path))
+        if (checkFileExist && !path.StartsWith("res://", StringComparison.OrdinalIgnoreCase) && !File.Exists(path))
         {
             dict.TryAdd(path, null);
             return (null, false);
@@ -131,7 +131,7 @@ public static class CachedSoundFactory
                 offset += samplesRead;
             }
 
-            return new CachedSound(filePath, wholeData, audioFileReader.TotalTime, actualWaveFormat);
+            return new CachedSound(filePath, wholeData, actualWaveFormat);
         }
         finally
         {

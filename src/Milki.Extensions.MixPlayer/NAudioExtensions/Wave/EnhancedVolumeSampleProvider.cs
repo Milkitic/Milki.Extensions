@@ -19,7 +19,7 @@ public class EnhancedVolumeSampleProvider : ISampleProvider
     /// Initializes a new instance of VolumeSampleProvider
     /// </summary>
     /// <param name="source">Source Sample Provider</param>
-    public EnhancedVolumeSampleProvider(ISampleProvider source)
+    public EnhancedVolumeSampleProvider(ISampleProvider? source)
     {
         Source = source;
         Volume = 1.0f;
@@ -29,6 +29,11 @@ public class EnhancedVolumeSampleProvider : ISampleProvider
     /// Source Sample Provider
     /// </summary>
     public ISampleProvider? Source { get; set; }
+
+    /// <summary>
+    /// Allows adjusting the volume, 1.0f = full volume
+    /// </summary>
+    public float Volume { get; set; }
 
     /// <summary>
     /// WaveFormat
@@ -51,7 +56,7 @@ public class EnhancedVolumeSampleProvider : ISampleProvider
         }
 
         int samplesRead = Source.Read(buffer, offset, sampleCount);
-        if (Volume != 1f)
+        if (Math.Abs(Volume - 1f) > 0.001)
         {
 #if NETCOREAPP3_1_OR_GREATER
             FastPath(buffer, offset, sampleCount);
@@ -64,11 +69,6 @@ public class EnhancedVolumeSampleProvider : ISampleProvider
         }
         return samplesRead;
     }
-
-    /// <summary>
-    /// Allows adjusting the volume, 1.0f = full volume
-    /// </summary>
-    public float Volume { get; set; }
 
 #if NETCOREAPP3_1_OR_GREATER
     private unsafe void FastPath(float[] buffer, int offset, int sampleCount)

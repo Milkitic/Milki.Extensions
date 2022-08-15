@@ -5,7 +5,17 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AssemblyName>timert</AssemblyName>
+    <RootNamespace>timert132</RootNamespace>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="resources\default\*.ogg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="resources\default\*.ogg" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Milki.Extensions.MixPlayer\Milki.Extensions.MixPlayer.csproj" />

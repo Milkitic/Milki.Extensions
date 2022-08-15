@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Milki.Extensions.MixPlayer.Utilities;
@@ -14,52 +17,94 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 internal static class ResampleHelper
 {
     private static readonly ILogger? Logger = Configuration.Instance.GetCurrentClassLogger();
+    private static readonly Dictionary<string, Assembly?> _assemblyCache = new();
+
     public static async Task<SmartWaveReader> GetResampledAudioFileReader(string path, WaveFormat newWaveFormat)
     {
-        var stream = await Resample(path, newWaveFormat).ConfigureAwait(false);
+        var stream = await ResampleAsync(path, newWaveFormat).ConfigureAwait(false);
         return stream is SmartWaveReader afr ? afr : new SmartWaveReader(stream);
     }
 
-    private static async Task<Stream> Resample(string path, WaveFormat newWaveFormat)
+    private static async Task<Stream> ResampleAsync(string path, WaveFormat newWaveFormat)
     {
-        return await Task.Run(() =>
+        return await Task.Run(() => Resample(path, newWaveFormat)).ConfigureAwait(false);
+    }
+
+    private static Stream Resample(string path, WaveFormat newWaveFormat)
+    {
+        SmartWaveReader? audioFileReader = null;
+        try
         {
-            SmartWaveReader? audioFileReader = null;
-            try
+            if (path.StartsWith("res://", StringComparison.OrdinalIgnoreCase))
             {
-                audioFileReader = File.Exists(path)
-                    ? new SmartWaveReader(path)
-                    : new SmartWaveReader(SharedUtils.EmptyWaveFile);
-                if (CompareWaveFormat(audioFileReader.WaveFormat, newWaveFormat))
+                var span = path.AsSpan(6);
+                var firstSplit = span.IndexOf('/');
+                var assemblyName = span.Slice(0, firstSplit).ToString();
+                var resourcePath = span.Slice(firstSplit + 1).ToString();
+
+                if (!_assemblyCache.TryGetValue(assemblyName, out var assembly))
                 {
-                    return (Stream)audioFileReader;
+                    assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(k =>
+                       k.GetName().Name.Equals(assemblyName, StringComparison.OrdinalIgnoreCase));
+
+                    _assemblyCache.Add(assemblyName, assembly);
                 }
 
-                var sw = Stopwatch.StartNew();
-                try
+                if (assembly == null)
                 {
-                    using (audioFileReader)
+                    audioFileReader = new SmartWaveReader(SharedUtils.EmptyWaveFile);
+                }
+                else
+                {
+                    var stream = assembly.GetManifestResourceStream(resourcePath);
+                    if (stream == null)
                     {
-                        using var resampler = new MediaFoundationResampler(audioFileReader, newWaveFormat);
-                        var stream = new MemoryStream();
-                        resampler.ResamplerQuality = 60; // highest
-                        WaveFileWriter.WriteWavFileToStream(stream, resampler);
-                        stream.Position = 0;
-                        return stream;
+                        audioFileReader = new SmartWaveReader(SharedUtils.EmptyWaveFile);
+                    }
+                    else
+                    {
+                        audioFileReader = new SmartWaveReader(stream);
                     }
                 }
-                finally
+            }
+            else if (File.Exists(path))
+            {
+                audioFileReader = new SmartWaveReader(path);
+            }
+            else
+            {
+                audioFileReader = new SmartWaveReader(SharedUtils.EmptyWaveFile);
+            }
+
+            if (CompareWaveFormat(audioFileReader.WaveFormat, newWaveFormat))
+            {
+                return audioFileReader;
+            }
+
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                using (audioFileReader)
                 {
-                    Logger?.LogDebug($"Resampled {Path.GetFileName(path)} in {sw.Elapsed.TotalMilliseconds:N2}ms");
+                    using var resampler = new MediaFoundationResampler(audioFileReader, newWaveFormat);
+                    var stream = new MemoryStream();
+                    resampler.ResamplerQuality = 60; // highest
+                    WaveFileWriter.WriteWavFileToStream(stream, resampler);
+                    stream.Position = 0;
+                    return stream;
                 }
             }
-            catch (Exception ex)
+            finally
             {
-                audioFileReader?.Dispose();
-                Console.Error.WriteLine($"Error while resampling audio file {path}: " + ex.Message);
-                throw;
+                Logger?.LogDebug($"Resampled {Path.GetFileName(path)} in {sw.Elapsed.TotalMilliseconds:N2}ms");
             }
-        }).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            audioFileReader?.Dispose();
+            Console.Error.WriteLine($"Error while resampling audio file {path}: " + ex.Message);
+            throw;
+        }
     }
 
     private static bool CompareWaveFormat(WaveFormat format1, WaveFormat format2)
