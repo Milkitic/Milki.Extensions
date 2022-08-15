@@ -15,7 +15,7 @@ public class JsonConfigurationConverter : IConfigurationConverter
         return obj!;
     }
 
-    public virtual  string SerializeSettings(object obj)
+    public virtual string SerializeSettings(object obj)
     {
         var content = JsonConvert.SerializeObject(obj, new JsonSerializerSettings
         {
