@@ -4,16 +4,16 @@ using System;
 
 namespace Milki.Extensions.MouseKeyHook.Internal;
 
-internal class KeyboardParams
+internal readonly struct KeyboardParams
 {
+    public readonly bool IsGlobal;
+    public readonly IntPtr WParam;
+    public readonly IntPtr LParam;
+
     public KeyboardParams(bool isGlobal, IntPtr wParam, IntPtr lParam)
     {
         IsGlobal = isGlobal;
         WParam = wParam;
         LParam = lParam;
     }
-
-    public bool IsGlobal { get; }
-    public IntPtr WParam { get; }
-    public IntPtr LParam { get; }
 }
