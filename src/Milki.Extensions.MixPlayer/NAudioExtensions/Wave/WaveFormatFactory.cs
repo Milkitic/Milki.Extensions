@@ -13,7 +13,7 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave
     {
         private static readonly ILogger? Logger = Configuration.Instance.GetCurrentClassLogger();
 
-        private static int _sampleRate = 44100;
+        private static int _sampleRate = 48000;
         private static int _bits = 16;
         private static int _channels = 2;
 
