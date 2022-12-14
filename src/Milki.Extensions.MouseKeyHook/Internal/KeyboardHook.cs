@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -15,7 +16,7 @@ internal class KeyboardHook : IKeyboardHook
 
     private readonly Dictionary<KeyBindTuple, KeyBind> _registeredCallbacks = new();
     private readonly Dictionary<Guid, KeyBind> _registeredCallbackGuidMappings = new();
-    private readonly HashSet<HookKeys> _downKeys = new();
+    private readonly ConcurrentDictionary<HookKeys, bool> _downKeys = new();
 
     public KeyboardHook(bool forceGlobal)
     {
@@ -115,7 +116,7 @@ internal class KeyboardHook : IKeyboardHook
             return;
         }
 
-        if (keyBind.AvoidRepeat && keyAction == KeyAction.KeyDown && _downKeys.Contains(hookKey))
+        if (keyBind.AvoidRepeat && keyAction == KeyAction.KeyDown && _downKeys.ContainsKey(hookKey))
         {
             return;
         }
@@ -145,12 +146,12 @@ internal class KeyboardHook : IKeyboardHook
         if (paramsDetail.IsKeyDown)
         {
             HandleKeyPress(hookKey, modifierKey, KeyAction.KeyDown);
-            _downKeys.Add(hookKey);
+            _downKeys.TryAdd(hookKey, true);
         }
         else if (paramsDetail.IsKeyUp)
         {
             HandleKeyPress(hookKey, modifierKey, KeyAction.KeyUp);
-            _downKeys.Remove(hookKey);
+            _downKeys.TryRemove(hookKey, out _);
         }
     }
 
