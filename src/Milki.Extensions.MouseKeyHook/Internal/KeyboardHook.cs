@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
+using Milki.Extensions.Threading;
 
 namespace Milki.Extensions.MouseKeyHook.Internal;
 
@@ -16,7 +17,8 @@ internal class KeyboardHook : IKeyboardHook
 
     private readonly Dictionary<KeyBindTuple, KeyBind> _registeredCallbacks = new();
     private readonly Dictionary<Guid, KeyBind> _registeredCallbackGuidMappings = new();
-    private readonly ConcurrentDictionary<HookKeys, bool> _downKeys = new();
+    private readonly Dictionary<HookKeys, bool> _downKeys = new();
+    private readonly SingleSynchronizationContext _context;
 
     public KeyboardHook(bool forceGlobal)
     {
@@ -25,6 +27,7 @@ internal class KeyboardHook : IKeyboardHook
         _hookId = forceGlobal
             ? NativeHooks.SetGlobalHook(_hookCallback)
             : NativeHooks.SetApplicationHook(_hookCallback);
+        _context = new SingleSynchronizationContext();
     }
 
     public Guid RegisterKey(HookKeys hookKey, KeyboardCallback callback, bool avoidRepeat = true)
@@ -86,6 +89,7 @@ internal class KeyboardHook : IKeyboardHook
     public void Dispose()
     {
         NativeHooks.UnhookWindowsHookEx(_hookId);
+        _context.Dispose();
         _downKeys.Clear();
     }
 
@@ -106,19 +110,19 @@ internal class KeyboardHook : IKeyboardHook
         return identity;
     }
 
-    private void HandleKeyPress(HookKeys hookKey, HookModifierKeys modifierKeys, KeyAction keyAction)
+    private bool HandleKeyPress(HookKeys hookKey, HookModifierKeys modifierKeys, KeyAction keyAction)
     {
         KeyPressed?.Invoke(modifierKeys, hookKey, keyAction);
 
         var currentKey = new KeyBindTuple(modifierKeys, hookKey);
         if (!_registeredCallbacks.TryGetValue(currentKey, out var keyBind))
         {
-            return;
+            return false;
         }
 
         if (keyBind.AvoidRepeat && keyAction == KeyAction.KeyDown && _downKeys.ContainsKey(hookKey))
         {
-            return;
+            return false;
         }
 
         if (keyBind.IsUpOrDown == true && keyAction == KeyAction.KeyUp)
@@ -133,6 +137,8 @@ internal class KeyboardHook : IKeyboardHook
         {
             keyBind.Callback.Invoke(modifierKeys, hookKey, keyAction);
         }
+
+        return true;
     }
 
     private void HandleSingleKeyboardInput(object? state)
@@ -145,13 +151,17 @@ internal class KeyboardHook : IKeyboardHook
         var hookKey = paramsDetail.HookKey;
         if (paramsDetail.IsKeyDown)
         {
-            HandleKeyPress(hookKey, modifierKey, KeyAction.KeyDown);
-            _downKeys.TryAdd(hookKey, true);
+            if (HandleKeyPress(hookKey, modifierKey, KeyAction.KeyDown))
+            {
+                _downKeys.Add(hookKey, true);
+            }
         }
         else if (paramsDetail.IsKeyUp)
         {
-            HandleKeyPress(hookKey, modifierKey, KeyAction.KeyUp);
-            _downKeys.TryRemove(hookKey, out _);
+            if (HandleKeyPress(hookKey, modifierKey, KeyAction.KeyUp))
+            {
+                _downKeys.Remove(hookKey);
+            }
         }
     }
 
@@ -163,7 +173,7 @@ internal class KeyboardHook : IKeyboardHook
         }
 
         // To prevent slowing keyboard input down, we use handle keyboard inputs in a separate thread
-        ThreadPool.QueueUserWorkItem(HandleSingleKeyboardInput, new KeyboardParams(_isGlobal, wParam, lParam));
+        _context.Post(HandleSingleKeyboardInput, new KeyboardParams(_isGlobal, wParam, lParam));
         return NativeHooks.CallNextHookEx(_hookId, nCode, wParam, lParam);
     }
 }

@@ -15,7 +15,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AsioTest", "Tests\AsioTest\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Milki.Extensions.Configuration", "Milki.Extensions.Configuration\Milki.Extensions.Configuration.csproj", "{316CEE0E-1E8C-4E0E-A15E-3BB418CE7B5A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TimerTest", "Tests\TimerTest\TimerTest.csproj", "{42CF925A-5B91-449E-9182-0C0CD4F50E6D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimerTest", "Tests\TimerTest\TimerTest.csproj", "{42CF925A-5B91-449E-9182-0C0CD4F50E6D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Milki.Extensions.Threading", "Milki.Extensions.Threading\Milki.Extensions.Threading.csproj", "{2AEA5527-714B-4ABD-ADA8-A56C3166D7FF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -47,6 +49,10 @@ Global
 		{42CF925A-5B91-449E-9182-0C0CD4F50E6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{42CF925A-5B91-449E-9182-0C0CD4F50E6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{42CF925A-5B91-449E-9182-0C0CD4F50E6D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2AEA5527-714B-4ABD-ADA8-A56C3166D7FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2AEA5527-714B-4ABD-ADA8-A56C3166D7FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2AEA5527-714B-4ABD-ADA8-A56C3166D7FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2AEA5527-714B-4ABD-ADA8-A56C3166D7FF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Windows;
 using Milki.Extensions.MouseKeyHook;
 
@@ -24,21 +25,36 @@ namespace KeyHookTest
             _handle = _keyboardHook.RegisterHotkey(
                 HookModifierKeys.Control, HookKeys.S, (modifier, key, type) =>
                 {
-                    Console.WriteLine("Ctrl+S");
+                    Console.WriteLine($"[{GetThreadName()}] Ctrl+S");
                 }
             );
             _handle = _keyboardHook.RegisterHotkey(
                 HookModifierKeys.Control, HookKeys.O, (modifier, key, type) =>
                 {
-                    Console.WriteLine("Ctrl+O");
+                    Console.WriteLine($"[{GetThreadName()}] Ctrl+O");
                 }
             );
+            _keyboardHook.RegisterKey(HookKeys.Z, (modifier, key, type) =>
+            {
+                if (type == KeyAction.KeyDown)
+                    Console.WriteLine($"[{GetThreadName()}] Z");
+            });
+            _keyboardHook.RegisterKey(HookKeys.X, (modifier, key, type) =>
+            {
+                if (type == KeyAction.KeyDown)
+                    Console.WriteLine($"[{GetThreadName()}] X");
+            });
             //_handle = _keyboardHook.RegisterKeyUp(
             //    HookKeys.O, (modifier, key, type) =>
             //    {
             //        Console.WriteLine("O");
             //    }
             //);
+        }
+
+        private static string GetThreadName()
+        {
+            return Thread.CurrentThread.Name ?? Thread.CurrentThread.ManagedThreadId.ToString();
         }
     }
 }
