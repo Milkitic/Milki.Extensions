@@ -169,7 +169,18 @@ public static class DeviceCreationHelper
 
     private static IEnumerable<DeviceDescription> EnumerateDeviceDescriptions()
     {
-        foreach (var dev in DirectSoundOut.Devices)
+        IEnumerable<DirectSoundDeviceInfo> devices;
+        try
+        {
+            devices = DirectSoundOut.Devices;
+        }
+        catch (Exception ex)
+        {
+            Logger?.LogError("Error while enumerating DirectSoundOut device: {0}", ex.Message);
+            devices = Enumerable.Empty<DirectSoundDeviceInfo>();
+        }
+
+        foreach (var dev in devices)
         {
             DeviceDescription? info = null;
             try
@@ -193,7 +204,19 @@ public static class DeviceCreationHelper
         }
 
         yield return DeviceDescription.WasapiDefault;
-        foreach (var wasapi in MmDeviceEnumerator.EnumerateAudioEndPoints(DataFlow.All, DeviceState.All))
+
+        IEnumerable<MMDevice> mmDeviceCollection;
+        try
+        {
+            mmDeviceCollection = MmDeviceEnumerator.EnumerateAudioEndPoints(DataFlow.All, DeviceState.All);
+        }
+        catch (Exception ex)
+        {
+            Logger?.LogError("Error while enumerating WASAPI device: {0}", ex.Message);
+            mmDeviceCollection = Enumerable.Empty<MMDevice>();
+        }
+
+        foreach (var wasapi in mmDeviceCollection)
         {
             DeviceDescription? info = null;
             try
@@ -217,7 +240,18 @@ public static class DeviceCreationHelper
             }
         }
 
-        foreach (var asio in AsioOut.GetDriverNames())
+        string[] asioDriverNames;
+        try
+        {
+            asioDriverNames = AsioOut.GetDriverNames();
+        }
+        catch (Exception ex)
+        {
+            Logger?.LogError("Error while enumerating ASIO device: {0}", ex.Message);
+            asioDriverNames = Array.Empty<string>();
+        }
+
+        foreach (var asio in asioDriverNames)
         {
             DeviceDescription? info = null;
             try
