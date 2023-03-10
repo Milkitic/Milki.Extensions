@@ -2,36 +2,36 @@
 
 internal sealed class SingleThread
 {
-    private readonly Thread _staThread;
+    private readonly Thread _singleThread;
     private readonly IQueueReader<SendOrPostCallbackItem> _queueConsumer;
     private readonly SynchronizationContext _syncContext;
-
-    private readonly ManualResetEvent _stopEvent = new ManualResetEvent(false);
+    private readonly ManualResetEventSlim _stopEvent = new(false);
 
     internal SingleThread(IQueueReader<SendOrPostCallbackItem> reader, SynchronizationContext syncContext,
-        string? name = null, bool staThread = false)
+        string? name = null, bool staThread = false, ThreadPriority threadPriority = ThreadPriority.Normal)
     {
         _queueConsumer = reader;
         _syncContext = syncContext;
-        _staThread = new Thread(Run)
+        _singleThread = new Thread(Run)
         {
             Name = name ?? "Standalone Worker Thread",
-            IsBackground = true
+            IsBackground = true,
+            Priority = threadPriority,
         };
         if (staThread)
         {
-            _staThread.SetApartmentState(ApartmentState.STA);
+            _singleThread.SetApartmentState(ApartmentState.STA);
         }
     }
 
     internal void Start()
     {
-        _staThread.Start();
+        _singleThread.Start();
     }
 
     internal void Join()
     {
-        _staThread.Join();
+        _singleThread.Join();
     }
 
     private void Run()
@@ -39,7 +39,7 @@ internal sealed class SingleThread
         SynchronizationContext.SetSynchronizationContext(_syncContext);
         while (true)
         {
-            bool stop = _stopEvent.WaitOne(0);
+            bool stop = _stopEvent.Wait(0);
             if (stop)
             {
                 _queueConsumer.Dispose();

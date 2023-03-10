@@ -5,7 +5,7 @@ internal sealed class SendOrPostCallbackItem
     private readonly object? _state;
     private readonly ExecutionType _exeType;
     private readonly SendOrPostCallback _method;
-    private readonly ManualResetEvent _asyncWaitHandle = new(false);
+    private readonly SemaphoreSlim _asyncWaitHandle = new(0, 1);
 
     internal SendOrPostCallbackItem(SendOrPostCallback callback,
         object? state, ExecutionType type)
@@ -42,7 +42,7 @@ internal sealed class SendOrPostCallbackItem
         }
         finally
         {
-            _asyncWaitHandle.Set();
+            _asyncWaitHandle.Release();
         }
     }
 
@@ -54,5 +54,5 @@ internal sealed class SendOrPostCallbackItem
         _method(_state);
     }
 
-    internal WaitHandle ExecutionCompleteWaitHandle => _asyncWaitHandle;
+    internal SemaphoreSlim ExecutionCompleteWaitHandle => _asyncWaitHandle;
 }
