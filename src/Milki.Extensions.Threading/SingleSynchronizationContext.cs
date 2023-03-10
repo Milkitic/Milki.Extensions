@@ -77,7 +77,7 @@ public sealed class SingleSynchronizationContext : SynchronizationContext, IDisp
         return result;
     }
 
-    public async ValueTask InvokeAsync(Action action)
+    public async Task InvokeAsync(Action action)
     {
         // create an item for execution
         var d = new SendOrPostCallback(_ => action());
@@ -95,7 +95,7 @@ public sealed class SingleSynchronizationContext : SynchronizationContext, IDisp
         }
     }
 
-    public async ValueTask<T> InvokeAsync<T>(Func<T> func)
+    public async Task<T> InvokeAsync<T>(Func<T> func)
     {
         // create an item for execution
         T result = default;
