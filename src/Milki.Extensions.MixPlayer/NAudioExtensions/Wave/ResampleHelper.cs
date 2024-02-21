@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -90,7 +89,7 @@ public static class ResampleHelper
         catch (Exception ex)
         {
             smartWaveReader?.Dispose();
-            Console.Error.WriteLine($"Error while resampling audio file {path}: " + ex.Message);
+            Logger?.LogError(ex, $"Error while resampling audio file {path}");
             throw;
         }
     }
