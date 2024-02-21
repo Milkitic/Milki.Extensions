@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Buffers;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
@@ -109,34 +108,12 @@ public static class CachedSoundFactory
         using var audioFileReader = await ResampleHelper
             .GetResampledSmartWaveReader(filePath, waveFormat, useWdlResampler).ConfigureAwait(false);
         var sw = Stopwatch.StartNew();
-        var wholeData = new float[(int)(audioFileReader.Length / 4)];
-        var actualWaveFormat = audioFileReader.WaveFormat;
-
-        var length = actualWaveFormat.SampleRate * actualWaveFormat.Channels;
-        var readBuffer = ArrayPool<float>.Shared.Rent(length);
         try
         {
-            int samplesRead;
-            int offset = 0;
-            while ((samplesRead = audioFileReader.Read(readBuffer, 0, length)) > 0)
-            {
-                var read = offset + samplesRead;
-                if (wholeData.Length < read)
-                {
-                    var realloc = new float[read];
-                    wholeData.CopyTo(realloc, 0);
-                    wholeData = realloc;
-                }
-
-                readBuffer.AsSpan(0, samplesRead).CopyTo(wholeData.AsSpan(offset, samplesRead));
-                offset += samplesRead;
-            }
-
-            return new CachedSound(filePath, wholeData, actualWaveFormat);
+            return new CachedSound(filePath, audioFileReader.ToIeeeSampleBytes(), audioFileReader.WaveFormat);
         }
         finally
         {
-            ArrayPool<float>.Shared.Return(readBuffer);
             Logger?.LogDebug($"Cached {Path.GetFileName(filePath)} in {sw.Elapsed.TotalMilliseconds:N2}ms");
         }
     }
