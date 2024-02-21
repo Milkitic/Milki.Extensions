@@ -1,6 +1,9 @@
 ﻿using System;
 using System.IO;
+using ATL;
+using ATL.AudioData;
 using Milki.Extensions.MixPlayer.Utilities;
+using NAudio;
 using NAudio.Vorbis;
 using NAudio.Wave;
 
@@ -134,7 +137,7 @@ public class SmartWaveReader : WaveStream, ISampleProvider
 
     private void CreateReaderStream(Stream sourceStream)
     {
-        var fileFormat = FileFormatHelper.GetFileFormatFromStream(sourceStream);
+        var fileFormat = FileFormatHelper.DetermineFileFormatFromStream(sourceStream);
         sourceStream.Seek(0, SeekOrigin.Begin);
 
         if (fileFormat == FileFormat.Wav)
@@ -184,22 +187,20 @@ public class SmartWaveReader : WaveStream, ISampleProvider
                     sourceStream.CopyTo(memoryStream);
                 }
 
-                memoryStream.Seek(0, SeekOrigin.Begin);
-
-                var fileAbstraction = new StreamFileAbstraction(memoryStream, FileName);
-                using (var file = TagLib.File.Create(fileAbstraction, "taglib/mp3", TagLib.ReadStyle.Average))
-                {
-                    file.RemoveTags(TagLib.TagTypes.AllTags);
-                    file.Save();
-                }
+                var track = new Track(memoryStream);
+                var result1 = track.Remove(MetaDataIOFactory.TagType.ID3V1);
+                var result2 = track.Remove(MetaDataIOFactory.TagType.ID3V2);
+                var result3 = track.Save();
 
                 memoryStream.Seek(0, SeekOrigin.Begin);
+                ReaderStream.Dispose();
+
                 _stream = memoryStream;
                 ReaderStream = new NLayerMp3FileReader(memoryStream);
             }
             else
             {
-                ReaderStream = new StreamMediaFoundationReader(sourceStream);
+                ReaderStream = GetMediaFoundationReader(sourceStream);
             }
         }
         else if (fileFormat == FileFormat.Mp3)
@@ -216,15 +217,7 @@ public class SmartWaveReader : WaveStream, ISampleProvider
         }
         else
         {
-            var os = Environment.OSVersion;
-            if (os.Platform == PlatformID.Win32NT && os.Version.Major >= 6) // Vista
-            {
-                ReaderStream = new StreamMediaFoundationReader(sourceStream);
-            }
-            else
-            {
-                throw new NotSupportedException("No available generic media reader for OS: " + os.VersionString + ".");
-            }
+            ReaderStream = GetMediaFoundationReader(sourceStream);
         }
     }
 

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;net6.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.1;net6.0</TargetFrameworks>
     <PackageLicenseExpression>LGPL-2.1-only</PackageLicenseExpression>
     <Description>This library is for timelined sound effects playing.</Description>
     <IsTrimmable>True</IsTrimmable>
@@ -14,9 +14,9 @@
     <PackageReference Include="NAudio.Core" Version="2.2.1" />
     <PackageReference Include="NAudio.Lame" Version="2.1.0" />
     <PackageReference Include="NAudio.Vorbis" Version="1.5.0" />
-    <PackageReference Include="TagLibSharp" Version="2.3.0" />
     <PackageReference Include="NAudio.Wasapi" Version="2.2.1" />
     <PackageReference Include="NAudio.WinMM" Version="2.2.1" />
+    <PackageReference Include="z440.atl.core" Version="5.20.0" />
   </ItemGroup>
 
 </Project>

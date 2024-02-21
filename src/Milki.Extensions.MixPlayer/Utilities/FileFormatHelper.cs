@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using ATL;
 using Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 
 namespace Milki.Extensions.MixPlayer.Utilities;
@@ -145,6 +146,42 @@ public static class FileFormatHelper
             }
 
             sourceStream.Seek(1, SeekOrigin.Begin);
+        }
+
+        return FileFormat.Others;
+    }
+
+    public static FileFormat DetermineFileFormatFromStream(Stream sourceStream)
+    {
+        var track = new Track(sourceStream);
+        if (track.AudioFormat.ShortName == "WAV")
+        {
+            return FileFormat.Wav;
+        }
+
+        if (track.AudioFormat.ShortName == "OGG")
+        {
+            return FileFormat.Ogg;
+        }
+
+        if (track.AudioFormat.ShortName == "AIFF")
+        {
+            return FileFormat.Aiff;
+        }
+
+        if (track.AudioFormat.ShortName == "FLAC")
+        {
+            return FileFormat.Flac;
+        }
+
+        if (track.AudioFormat.ShortName == "WMA")
+        {
+            return FileFormat.Wma;
+        }
+
+        if (track.AudioFormat.Name == "MPEG Audio (Layer III)")
+        {
+            return track.MetadataFormats.Count > 0 ? FileFormat.Mp3Id3 : FileFormat.Mp3;
         }
 
         return FileFormat.Others;
