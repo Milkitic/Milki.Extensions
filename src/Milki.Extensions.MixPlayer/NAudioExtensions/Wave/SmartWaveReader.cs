@@ -145,8 +145,33 @@ public class SmartWaveReader : WaveStream, ISampleProvider
                 return;
             }
 
-            ReaderStream = WaveFormatConversionStream.CreatePcmStream(ReaderStream);
-            ReaderStream = new BlockAlignReductionStream(ReaderStream);
+            if (ReaderStream.WaveFormat.Encoding == WaveFormatEncoding.Extensible &&
+                ReaderStream.WaveFormat.BitsPerSample is 24 or 32)
+            {
+                ReaderStream.Dispose();
+                // fallback to mf
+                ReaderStream = GetMediaFoundationReader(sourceStream);
+                return;
+            }
+
+            try
+            {
+                var readerStream = WaveFormatConversionStream.CreatePcmStream(ReaderStream);
+                readerStream = new BlockAlignReductionStream(readerStream);
+                ReaderStream = readerStream;
+            }
+            catch (MmException ex)
+            {
+                if (ex.Function == "acmFormatSuggest")
+                {
+                    // fallback to mf
+                    ReaderStream = GetMediaFoundationReader(sourceStream);
+                }
+                else
+                {
+                    throw;
+                }
+            }
         }
         else if (fileFormat == FileFormat.Mp3Id3)
         {
@@ -231,5 +256,14 @@ public class SmartWaveReader : WaveStream, ISampleProvider
             8 => _sourceBytesPerSample * (destBytes >> 3),
             _ => _sourceBytesPerSample * (destBytes / _destBytesPerSample)
         };
+    }
+
+    private static StreamMediaFoundationReader GetMediaFoundationReader(Stream sourceStream)
+    {
+        var os = Environment.OSVersion;
+        if (os is not { Platform: PlatformID.Win32NT, Version.Major: >= 6 }) // Vista
+            throw new NotSupportedException("No available generic media reader for OS: " + os.VersionString + ".");
+
+        return new StreamMediaFoundationReader(sourceStream);
     }
 }
