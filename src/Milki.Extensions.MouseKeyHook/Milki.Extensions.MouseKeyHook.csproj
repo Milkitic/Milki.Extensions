@@ -6,10 +6,23 @@
     <Description>This library is for mouse/keyboard hooking on Windows platform.</Description>
     <Nullable>enable</Nullable>
     <IsTrimmable>True</IsTrimmable>
+    <RootNamespace />
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Windows.CsWin32" Version="0.3.183">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Milki.Extensions.Threading\Milki.Extensions.Threading.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Milki.Extensions.MouseKeyHook\Internal\" />
   </ItemGroup>
 
 </Project>

@@ -25,6 +25,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UnitTests", "UnitTests", "{
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileTest", "UnitTests\FileTest\FileTest.csproj", "{491EE852-5CAC-463C-8BC8-BF39D2D4EB31}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeyHookConsoleTest", "Tests\KeyHookConsoleTest\KeyHookConsoleTest.csproj", "{22F3A613-2D7C-40CB-B441-6481897002A4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -67,6 +69,10 @@ Global
 		{491EE852-5CAC-463C-8BC8-BF39D2D4EB31}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{491EE852-5CAC-463C-8BC8-BF39D2D4EB31}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{491EE852-5CAC-463C-8BC8-BF39D2D4EB31}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22F3A613-2D7C-40CB-B441-6481897002A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22F3A613-2D7C-40CB-B441-6481897002A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22F3A613-2D7C-40CB-B441-6481897002A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22F3A613-2D7C-40CB-B441-6481897002A4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -77,6 +83,7 @@ Global
 		{42CF925A-5B91-449E-9182-0C0CD4F50E6D} = {0060557C-C044-41BB-B781-DD0AD74F4ED1}
 		{09B75BA0-E5B5-4800-84BA-F18C7E6A97F1} = {0060557C-C044-41BB-B781-DD0AD74F4ED1}
 		{491EE852-5CAC-463C-8BC8-BF39D2D4EB31} = {127B1ED5-8965-4750-8D23-5637ECEA311D}
+		{22F3A613-2D7C-40CB-B441-6481897002A4} = {0060557C-C044-41BB-B781-DD0AD74F4ED1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3B3DD15B-1C07-49DE-B493-E711379C88CC}

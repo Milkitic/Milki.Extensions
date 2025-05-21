@@ -1,4 +1,5 @@
 ﻿using Milki.Extensions.MouseKeyHook.Internal;
+using Milki.Extensions.MouseKeyHook.RawInput;
 
 namespace Milki.Extensions.MouseKeyHook;
 
@@ -12,5 +13,12 @@ public static class KeyboardHookFactory
     public static IKeyboardHook CreateGlobal()
     {
         return new KeyboardHook(true);
+    }
+
+    public static IKeyboardHook CreateRawInput()
+    {
+        var rawInputKeyController = new RawInputKeyController();
+        rawInputKeyController.Start();
+        return rawInputKeyController;
     }
 }

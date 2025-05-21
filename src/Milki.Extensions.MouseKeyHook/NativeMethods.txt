@@ -1,0 +1,26 @@
+﻿// Window Management
+CreateWindowEx
+DefWindowProc
+DestroyWindow
+RegisterClass
+UnregisterClass
+WM_DESTROY
+
+// Message Loop & Handling
+DispatchMessage
+GetMessage
+PostMessage
+PostQuitMessage
+TranslateMessage
+WM_QUIT
+
+// Input Handling
+MapVirtualKey
+WM_INPUT
+
+// Constants
+CW_USEDEFAULT
+HWND_MESSAGE
+
+// Module Related
+GetModuleHandle
