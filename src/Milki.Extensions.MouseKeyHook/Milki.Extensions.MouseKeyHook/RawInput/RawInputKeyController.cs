@@ -44,11 +44,6 @@ public class RawInputKeyController : RawInputController, IKeyboardHook
 
     public bool TryUnregisterHotkey(HookModifierKeys hookModifierKeys, HookKeys hookKey)
     {
-        if (hookModifierKeys == HookModifierKeys.None)
-        {
-            throw new ArgumentException("ModifierKeysIsNone");
-        }
-
         var key = new KeyBindTuple(hookModifierKeys, hookKey);
         if (_registeredCallbacks.TryRemove(key, out var keyBind))
         {
@@ -74,21 +69,22 @@ public class RawInputKeyController : RawInputController, IKeyboardHook
     {
         base.Dispose(disposing);
         _downKeys.Clear();
+        _registeredCallbacks.Clear();
+        _registeredCallbackGuidMappings.Clear();
     }
 
     private Guid RegisterKeyCore(HookModifierKeys hookModifierKeys, HookKeys hookKey, KeyboardCallback callback,
         bool avoidRepeat, bool? isUpOrDown)
     {
         var keyBindTuple = new KeyBindTuple(hookModifierKeys, hookKey);
-        if (_registeredCallbacks.ContainsKey(keyBindTuple))
+        var identity = Guid.NewGuid();
+        var keyBind = new KeyBind(identity, keyBindTuple, callback, avoidRepeat, isUpOrDown);
+
+        if (!_registeredCallbacks.TryAdd(keyBindTuple, keyBind))
         {
             throw new ArgumentException("Hotkey already registered.");
         }
 
-        var identity = Guid.NewGuid();
-        var keyBind = new KeyBind(identity, keyBindTuple, callback, avoidRepeat, isUpOrDown);
-
-        _registeredCallbacks.TryAdd(keyBindTuple, keyBind);
         _registeredCallbackGuidMappings.TryAdd(identity, keyBind);
         return identity;
     }
@@ -108,15 +104,21 @@ public class RawInputKeyController : RawInputController, IKeyboardHook
             return false;
         }
 
-        if (keyBind.IsUpOrDown == true && keyAction == KeyAction.KeyUp)
+        bool shouldInvoke = false;
+        if (keyBind.IsUpOrDown == null)
         {
-            keyBind.Callback.Invoke(modifierKeys, hookKey, keyAction);
+            shouldInvoke = true;
         }
-        if (keyBind.IsUpOrDown == false && keyAction == KeyAction.KeyDown)
+        else if (keyBind.IsUpOrDown == true && keyAction == KeyAction.KeyUp)
         {
-            keyBind.Callback.Invoke(modifierKeys, hookKey, keyAction);
+            shouldInvoke = true;
         }
-        else if (keyBind.IsUpOrDown == null)
+        else if (keyBind.IsUpOrDown == false && keyAction == KeyAction.KeyDown)
+        {
+            shouldInvoke = true;
+        }
+
+        if (shouldInvoke)
         {
             keyBind.Callback.Invoke(modifierKeys, hookKey, keyAction);
         }
