@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using Windows.Win32;
+using Windows.Win32.UI.Input.KeyboardAndMouse;
 
-namespace Milki.Extensions.MouseKeyHook.Internal;
+namespace Milki.Extensions.MouseKeyHook.LowLevelHook;
 
 internal record struct KeyboardParamsDetail
 {
@@ -25,16 +27,16 @@ internal record struct KeyboardParamsDetail
 
             var modifierKeys = GetModifierStates();
 
-            var keyCode = (int)wParam;
-            var isKeyDown = keyCode is NativeHooks.WM_KEYDOWN or NativeHooks.WM_SYSKEYDOWN;
-            var isKeyUp = keyCode is NativeHooks.WM_KEYUP or NativeHooks.WM_SYSKEYUP;
+            var keyCode = (uint)wParam;
+            var isKeyDown = keyCode is PInvoke.WM_KEYDOWN or PInvoke.WM_SYSKEYDOWN;
+            var isKeyUp = keyCode is PInvoke.WM_KEYUP or PInvoke.WM_SYSKEYUP;
 
             const uint maskExtendedKey = 0x1;
             var isExtendedKey = (keyboardHookStruct.Flags & maskExtendedKey) > 0;
 
             keyboardParamsDetail.HookKey = (HookKeys)keyboardHookStruct.VirtualKeyCode;
             keyboardParamsDetail.HookModifierKeys = modifierKeys;
-            if (keyboardParamsDetail.HookKey == HookKeys.ControlKey&&modifierKeys==HookModifierKeys.Control)
+            if (keyboardParamsDetail.HookKey == HookKeys.ControlKey && modifierKeys == HookModifierKeys.Control)
             {
                 keyboardParamsDetail.HookModifierKeys = HookModifierKeys.None;
             }
@@ -108,17 +110,17 @@ internal record struct KeyboardParamsDetail
 
     private static HookModifierKeys GetModifierStates()
     {
-        var control = CheckModifier(NativeHooks.VK_CONTROL);
-        var shift = CheckModifier(NativeHooks.VK_SHIFT);
-        var alt = CheckModifier(NativeHooks.VK_MENU);
+        var control = CheckModifier(VIRTUAL_KEY.VK_CONTROL);
+        var shift = CheckModifier(VIRTUAL_KEY.VK_SHIFT);
+        var alt = CheckModifier(VIRTUAL_KEY.VK_MENU);
 
         return (control ? HookModifierKeys.Control : HookModifierKeys.None) |
                (shift ? HookModifierKeys.Shift : HookModifierKeys.None) |
                (alt ? HookModifierKeys.Alt : HookModifierKeys.None);
     }
 
-    private static bool CheckModifier(int vKey)
+    private static bool CheckModifier(VIRTUAL_KEY vKey)
     {
-        return (NativeHooks.GetKeyState(vKey) & 0x8000) > 0;
+        return (PInvoke.GetKeyState((int)vKey) & 0x8000) > 0;
     }
 }

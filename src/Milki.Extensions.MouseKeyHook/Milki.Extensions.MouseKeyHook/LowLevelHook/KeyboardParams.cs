@@ -2,7 +2,7 @@
 
 using System;
 
-namespace Milki.Extensions.MouseKeyHook.Internal;
+namespace Milki.Extensions.MouseKeyHook.LowLevelHook;
 
 internal readonly struct KeyboardParams
 {

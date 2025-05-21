@@ -16,12 +16,13 @@ namespace KeyHookTest
         public MainWindow()
         {
             InitializeComponent();
-            //_keyboardHook = KeyboardHookFactory.CreateGlobal();
-            _keyboardHook = KeyboardHookFactory.CreateApplication();
+            _keyboardHook = KeyboardHookFactory.CreateGlobal();
+            //_keyboardHook = KeyboardHookFactory.CreateApplication();
         }
 
         private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
         {
+            _keyboardHook.KeyPressed += KeyboardHook_KeyPressed;
             _handle = _keyboardHook.RegisterHotkey(
                 HookModifierKeys.Control, HookKeys.S, (modifier, key, type) =>
                 {
@@ -50,6 +51,18 @@ namespace KeyHookTest
             //        Console.WriteLine("O");
             //    }
             //);
+        }
+
+        private void KeyboardHook_KeyPressed(HookModifierKeys hookModifierKeys, HookKeys hookKey, KeyAction type)
+        {
+            if (hookModifierKeys == HookModifierKeys.None)
+            {
+                Console.WriteLine(hookKey + " -> " + type);
+            }
+            else
+            {
+                Console.WriteLine(hookKey + " (" + hookModifierKeys + ")" + " -> " + type);
+            }
         }
 
         private static string GetThreadName()

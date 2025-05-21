@@ -5,23 +5,14 @@ using System.Runtime.InteropServices;
 // ReSharper disable UnusedMember.Global
 // ReSharper disable IdentifierTypo
 
-namespace Milki.Extensions.MouseKeyHook.Internal;
+namespace Milki.Extensions.MouseKeyHook.LowLevelHook;
 
 internal static class NativeHooks
 {
     internal delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
 
-    internal const byte VK_CONTROL = 0x11;
-    internal const byte VK_SHIFT = 0x10;
-    internal const byte VK_MENU = 0x12;
-
     internal const int WH_KEYBOARD = 2;
     internal const int WH_KEYBOARD_LL = 13;
-
-    internal const int WM_KEYDOWN = 0x0100;
-    internal const int WM_KEYUP = 0x0101;
-    internal const int WM_SYSKEYDOWN = 0x0104;
-    internal const int WM_SYSKEYUP = 0x0105;
 
     [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     internal static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, int dwThreadId);
@@ -32,9 +23,6 @@ internal static class NativeHooks
 
     [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     internal static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
-
-    [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
-    public static extern short GetKeyState(int vKey);
 
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     private static extern IntPtr GetModuleHandle(string lpModuleName);

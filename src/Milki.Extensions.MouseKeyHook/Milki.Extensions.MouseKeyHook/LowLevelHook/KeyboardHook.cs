@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using Milki.Extensions.MouseKeyHook.Internal;
 using Milki.Extensions.Threading;
 
-namespace Milki.Extensions.MouseKeyHook.Internal;
+namespace Milki.Extensions.MouseKeyHook.LowLevelHook;
 
 internal class KeyboardHook : IKeyboardHook
 {

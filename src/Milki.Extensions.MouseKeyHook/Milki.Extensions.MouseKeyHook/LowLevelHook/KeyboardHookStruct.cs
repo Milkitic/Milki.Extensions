@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace Milki.Extensions.MouseKeyHook.Internal;
+namespace Milki.Extensions.MouseKeyHook.LowLevelHook;
 
 /// <summary>
 ///     The KeyboardHookStruct structure contains information about a low-level keyboard input event.

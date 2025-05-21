@@ -21,8 +21,4 @@
     <ProjectReference Include="..\Milki.Extensions.Threading\Milki.Extensions.Threading.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Milki.Extensions.MouseKeyHook\Internal\" />
-  </ItemGroup>
-
 </Project>

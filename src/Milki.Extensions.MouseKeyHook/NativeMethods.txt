@@ -16,7 +16,13 @@ WM_QUIT
 
 // Input Handling
 MapVirtualKey
+GetKeyState
 WM_INPUT
+VIRTUAL_KEY
+WM_KEYDOWN
+WM_SYSKEYDOWN
+WM_KEYUP
+WM_SYSKEYUP
 
 // Constants
 CW_USEDEFAULT

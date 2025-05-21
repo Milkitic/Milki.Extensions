@@ -1,7 +1,7 @@
 ﻿using System;
-using Windows.Win32;
-using Windows.Win32.UI.Input.KeyboardAndMouse;
+using System.Collections.Concurrent;
 using Linearstar.Windows.RawInput.Native;
+using Milki.Extensions.MouseKeyHook.Internal;
 
 namespace Milki.Extensions.MouseKeyHook.RawInput;
 
@@ -9,88 +9,155 @@ public class RawInputKeyController : RawInputController, IKeyboardHook
 {
     public event KeyboardCallback? KeyPressed;
 
+    private readonly ConcurrentDictionary<KeyBindTuple, KeyBind> _registeredCallbacks = new();
+    private readonly ConcurrentDictionary<Guid, KeyBind> _registeredCallbackGuidMappings = new();
+    private readonly ConcurrentDictionary<HookKeys, bool> _downKeys = new();
+
     public RawInputKeyController()
     {
     }
 
     public Guid RegisterKey(HookKeys hookKey, KeyboardCallback callback, bool avoidRepeat = true)
     {
-        throw new NotImplementedException();
+        return RegisterKeyCore(HookModifierKeys.None, hookKey, callback, avoidRepeat, null);
     }
 
     public Guid RegisterKeyDown(HookKeys hookKey, KeyboardCallback callback, bool avoidRepeat = true)
     {
-        throw new NotImplementedException();
+        return RegisterKeyCore(HookModifierKeys.None, hookKey, callback, avoidRepeat, false);
     }
 
     public Guid RegisterKeyUp(HookKeys hookKey, KeyboardCallback callback, bool avoidRepeat = true)
     {
-        throw new NotImplementedException();
+        return RegisterKeyCore(HookModifierKeys.None, hookKey, callback, avoidRepeat, true);
     }
 
     public Guid RegisterHotkey(HookModifierKeys hookModifierKeys, HookKeys hookKey, KeyboardCallback callback)
     {
-        throw new NotImplementedException();
+        return RegisterKeyCore(hookModifierKeys, hookKey, callback, true, false);
     }
 
     public bool TryUnregisterKey(HookKeys hookKey)
     {
-        throw new NotImplementedException();
+        return TryUnregisterHotkey(HookModifierKeys.None, hookKey);
     }
 
     public bool TryUnregisterHotkey(HookModifierKeys hookModifierKeys, HookKeys hookKey)
     {
-        throw new NotImplementedException();
+        if (hookModifierKeys == HookModifierKeys.None)
+        {
+            throw new ArgumentException("ModifierKeysIsNone");
+        }
+
+        var key = new KeyBindTuple(hookModifierKeys, hookKey);
+        if (_registeredCallbacks.TryRemove(key, out var keyBind))
+        {
+            _registeredCallbackGuidMappings.TryRemove(keyBind!.Identity, out _);
+            return true;
+        }
+
+        return false;
     }
 
     public bool TryUnregister(Guid identity)
     {
-        throw new NotImplementedException();
+        if (!_registeredCallbackGuidMappings.TryRemove(identity, out var keyBind))
+        {
+            return false;
+        }
+
+        _registeredCallbacks.TryRemove(keyBind!.KeyBindTuple, out _);
+        return true;
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        _downKeys.Clear();
+    }
+
+    private Guid RegisterKeyCore(HookModifierKeys hookModifierKeys, HookKeys hookKey, KeyboardCallback callback,
+        bool avoidRepeat, bool? isUpOrDown)
+    {
+        var keyBindTuple = new KeyBindTuple(hookModifierKeys, hookKey);
+        if (_registeredCallbacks.ContainsKey(keyBindTuple))
+        {
+            throw new ArgumentException("Hotkey already registered.");
+        }
+
+        var identity = Guid.NewGuid();
+        var keyBind = new KeyBind(identity, keyBindTuple, callback, avoidRepeat, isUpOrDown);
+
+        _registeredCallbacks.TryAdd(keyBindTuple, keyBind);
+        _registeredCallbackGuidMappings.TryAdd(identity, keyBind);
+        return identity;
+    }
+
+    private bool HandleKeyPress(HookKeys hookKey, HookModifierKeys modifierKeys, KeyAction keyAction)
+    {
+        KeyPressed?.Invoke(modifierKeys, hookKey, keyAction);
+
+        var currentKey = new KeyBindTuple(modifierKeys, hookKey);
+        if (!_registeredCallbacks.TryGetValue(currentKey, out var keyBind))
+        {
+            return false;
+        }
+
+        if (keyBind.AvoidRepeat && keyAction == KeyAction.KeyDown && _downKeys.ContainsKey(hookKey))
+        {
+            return false;
+        }
+
+        if (keyBind.IsUpOrDown == true && keyAction == KeyAction.KeyUp)
+        {
+            keyBind.Callback.Invoke(modifierKeys, hookKey, keyAction);
+        }
+        if (keyBind.IsUpOrDown == false && keyAction == KeyAction.KeyDown)
+        {
+            keyBind.Callback.Invoke(modifierKeys, hookKey, keyAction);
+        }
+        else if (keyBind.IsUpOrDown == null)
+        {
+            keyBind.Callback.Invoke(modifierKeys, hookKey, keyAction);
+        }
+
+        return true;
     }
 
     protected override void OnKeyboardInput(RawKeyboard keyboardData)
     {
         if (keyboardData.VirutalKey >= 0xff) return;
-        if (!ConvertType(keyboardData.Flags, out var keyAction)) return;
+        var keyAction = ConvertType(keyboardData.Flags);
 
-        // https://stackoverflow.com/questions/5920301/distinguish-between-left-and-right-shift-keys-using-rawinput
         int scanCode = keyboardData.ScanCode;
         scanCode |= (keyboardData.Flags & RawKeyboardFlags.KeyE0) != 0 ? 0xe000 : 0;
         scanCode |= (keyboardData.Flags & RawKeyboardFlags.KeyE1) != 0 ? 0xe100 : 0;
 
         HookKeys vkCode = (HookKeys)keyboardData.VirutalKey;
-        Console.WriteLine(keyboardData);
-        switch (vkCode)
-        {
-            case HookKeys.ShiftKey:
-            case HookKeys.ControlKey:
-            case HookKeys.Menu:
-                var vkCodeMap =
-                    (HookKeys)PInvoke.MapVirtualKey((uint)scanCode, MAP_VIRTUAL_KEY_TYPE.MAPVK_VSC_TO_VK_EX);
-                vkCode = vkCodeMap;
-                break;
-            default:
-                break;
-        }
+        // Console.WriteLine($"Raw VK: {vkCode}, Raw ScanCode: {keyboardData.ScanCode}, Enhanced ScanCode: {scanCode}, Flags: {keyboardData.Flags}");
 
-        KeyPressed?.Invoke(HookModifierKeys.None, vkCode, keyAction);
+        vkCode = KeyHelper.MapActualVirtualKey(vkCode, scanCode);
+
+        var currentGlobalModifiers = KeyHelper.GetGlobalModifiersState();
+
+        if (keyAction == KeyAction.KeyDown)
+        {
+            if (HandleKeyPress(vkCode, currentGlobalModifiers, KeyAction.KeyDown))
+            {
+                _downKeys.TryAdd(vkCode, true);
+            }
+        }
+        else if (keyAction == KeyAction.KeyUp)
+        {
+            if (HandleKeyPress(vkCode, currentGlobalModifiers, KeyAction.KeyUp))
+            {
+                _downKeys.TryRemove(vkCode, out _);
+            }
+        }
     }
 
-    private bool ConvertType(RawKeyboardFlags flags, out KeyAction keyAction)
+    private static KeyAction ConvertType(RawKeyboardFlags flags)
     {
-        if ((flags & RawKeyboardFlags.Up) != 0)
-        {
-            keyAction = KeyAction.KeyUp;
-            return true;
-        }
-
-        if (flags == RawKeyboardFlags.None)
-        {
-            keyAction = KeyAction.KeyDown;
-            return true;
-        }
-
-        keyAction = KeyAction.KeyDown;
-        return false;
+        return (flags & RawKeyboardFlags.Up) != 0 ? KeyAction.KeyUp : KeyAction.KeyDown;
     }
 }
