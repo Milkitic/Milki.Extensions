@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using Milki.Extensions.MouseKeyHook.Internal;
 using Milki.Extensions.Threading;
 
@@ -14,9 +14,10 @@ internal class KeyboardHook : IKeyboardHook
     private readonly IntPtr _hookId;
     private readonly bool _isGlobal;
 
-    private readonly Dictionary<KeyBindTuple, KeyBind> _registeredCallbacks = new();
-    private readonly Dictionary<Guid, KeyBind> _registeredCallbackGuidMappings = new();
-    private readonly Dictionary<HookKeys, bool> _downKeys = new();
+    private readonly ConcurrentDictionary<KeyBindTuple, KeyBind> _registeredCallbacks = new();
+    private readonly ConcurrentDictionary<Guid, KeyBind> _registeredCallbackGuidMappings = new();
+    private readonly ConcurrentDictionary<HookKeys, bool> _downKeys = new();
+
     private readonly SingleSynchronizationContext _context;
 
     public KeyboardHook(bool forceGlobal)
@@ -56,32 +57,24 @@ internal class KeyboardHook : IKeyboardHook
 
     public bool TryUnregisterHotkey(HookModifierKeys hookModifierKeys, HookKeys hookKey)
     {
-        if (hookModifierKeys == HookModifierKeys.None)
-        {
-            throw new ArgumentException("ModifierKeysIsNone");
-        }
-
         var key = new KeyBindTuple(hookModifierKeys, hookKey);
-        var hasValue = _registeredCallbacks.TryGetValue(key, out var keyBind);
-        if (hasValue)
+        if (_registeredCallbacks.TryRemove(key, out var keyBind))
         {
-            _registeredCallbacks.Remove(key);
-            _registeredCallbackGuidMappings.Remove(keyBind!.Identity);
+            _registeredCallbackGuidMappings.TryRemove(keyBind!.Identity, out _);
+            return true;
         }
 
-        return hasValue;
+        return false;
     }
 
     public bool TryUnregister(Guid identity)
     {
-        var hasValue = _registeredCallbackGuidMappings.TryGetValue(identity, out var keyBind);
-        if (!hasValue)
+        if (!_registeredCallbackGuidMappings.TryRemove(identity, out var keyBind))
         {
             return false;
         }
 
-        _registeredCallbackGuidMappings.Remove(identity);
-        _registeredCallbacks.Remove(keyBind!.KeyBindTuple);
+        _registeredCallbacks.TryRemove(keyBind!.KeyBindTuple, out _);
         return true;
     }
 
@@ -90,22 +83,23 @@ internal class KeyboardHook : IKeyboardHook
         NativeHooks.UnhookWindowsHookEx(_hookId);
         _context.Dispose();
         _downKeys.Clear();
+        _registeredCallbacks.Clear();
+        _registeredCallbackGuidMappings.Clear();
     }
 
     private Guid RegisterKeyCore(HookModifierKeys hookModifierKeys, HookKeys hookKey, KeyboardCallback callback,
         bool avoidRepeat, bool? isUpOrDown)
     {
         var keyBindTuple = new KeyBindTuple(hookModifierKeys, hookKey);
-        if (_registeredCallbacks.ContainsKey(keyBindTuple))
+        var identity = Guid.NewGuid();
+        var keyBind = new KeyBind(identity, keyBindTuple, callback, avoidRepeat, isUpOrDown);
+
+        if (!_registeredCallbacks.TryAdd(keyBindTuple, keyBind))
         {
             throw new ArgumentException("Hotkey already registered.");
         }
 
-        var identity = Guid.NewGuid();
-        var keyBind = new KeyBind(identity, keyBindTuple, callback, avoidRepeat, isUpOrDown);
-
-        _registeredCallbacks.Add(keyBindTuple, keyBind);
-        _registeredCallbackGuidMappings.Add(identity, keyBind);
+        _registeredCallbackGuidMappings.TryAdd(identity, keyBind);
         return identity;
     }
 
@@ -124,15 +118,21 @@ internal class KeyboardHook : IKeyboardHook
             return false;
         }
 
-        if (keyBind.IsUpOrDown == true && keyAction == KeyAction.KeyUp)
+        bool shouldInvoke = false;
+        if (keyBind.IsUpOrDown == null)
         {
-            keyBind.Callback.Invoke(modifierKeys, hookKey, keyAction);
+            shouldInvoke = true;
         }
-        if (keyBind.IsUpOrDown == false && keyAction == KeyAction.KeyDown)
+        else if (keyBind.IsUpOrDown == true && keyAction == KeyAction.KeyUp)
         {
-            keyBind.Callback.Invoke(modifierKeys, hookKey, keyAction);
+            shouldInvoke = true;
         }
-        else if (keyBind.IsUpOrDown == null)
+        else if (keyBind.IsUpOrDown == false && keyAction == KeyAction.KeyDown)
+        {
+            shouldInvoke = true;
+        }
+
+        if (shouldInvoke)
         {
             keyBind.Callback.Invoke(modifierKeys, hookKey, keyAction);
         }
@@ -152,14 +152,14 @@ internal class KeyboardHook : IKeyboardHook
         {
             if (HandleKeyPress(hookKey, modifierKey, KeyAction.KeyDown))
             {
-                _downKeys.Add(hookKey, true);
+                _downKeys.TryAdd(hookKey, true);
             }
         }
         else if (paramsDetail.IsKeyUp)
         {
             if (HandleKeyPress(hookKey, modifierKey, KeyAction.KeyUp))
             {
-                _downKeys.Remove(hookKey);
+                _downKeys.TryRemove(hookKey, out _);
             }
         }
     }
