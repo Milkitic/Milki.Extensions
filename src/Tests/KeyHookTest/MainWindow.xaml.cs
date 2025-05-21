@@ -16,13 +16,14 @@ namespace KeyHookTest
         public MainWindow()
         {
             InitializeComponent();
-            _keyboardHook = KeyboardHookFactory.CreateGlobal();
+            //_keyboardHook = KeyboardHookFactory.CreateGlobal();
             //_keyboardHook = KeyboardHookFactory.CreateApplication();
+            _keyboardHook = KeyboardHookFactory.CreateRawInput();
         }
 
         private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
         {
-            _keyboardHook.KeyPressed += KeyboardHook_KeyPressed;
+            //_keyboardHook.KeyPressed += KeyboardHook_KeyPressed;
             _handle = _keyboardHook.RegisterHotkey(
                 HookModifierKeys.Control, HookKeys.S, (modifier, key, type) =>
                 {
@@ -38,12 +39,16 @@ namespace KeyHookTest
             _keyboardHook.RegisterKey(HookKeys.Z, (modifier, key, type) =>
             {
                 if (type == KeyAction.KeyDown)
-                    Console.WriteLine($"[{GetThreadName()}] Z");
+                    Console.WriteLine($"[{GetThreadName()}] Z (\u2193)");
+                else if (type == KeyAction.KeyUp)
+                    Console.WriteLine($"[{GetThreadName()}] Z (\u2191)");
             });
             _keyboardHook.RegisterKey(HookKeys.X, (modifier, key, type) =>
             {
                 if (type == KeyAction.KeyDown)
-                    Console.WriteLine($"[{GetThreadName()}] X");
+                    Console.WriteLine($"[{GetThreadName()}] X (\u2193)");
+                else if (type == KeyAction.KeyUp)
+                    Console.WriteLine($"[{GetThreadName()}] X (\u2191)");
             });
             //_handle = _keyboardHook.RegisterKeyUp(
             //    HookKeys.O, (modifier, key, type) =>
