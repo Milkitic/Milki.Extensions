@@ -1,7 +1,5 @@
 ﻿using System;
 using System.IO;
-using ATL;
-using ATL.AudioData;
 using Milki.Extensions.MixPlayer.Utilities;
 using NAudio;
 using NAudio.Vorbis;
@@ -11,7 +9,6 @@ namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 
 public class SmartWaveReader : WaveStream, ISampleProvider
 {
-    private readonly bool _platformCompatible;
     private readonly NAudio.Wave.SampleProviders.SampleChannel _sampleChannel;
     private readonly int _destBytesPerSample;
     private readonly int _sourceBytesPerSample;
@@ -20,19 +17,18 @@ public class SmartWaveReader : WaveStream, ISampleProvider
     private bool _isDisposed;
     private WaveStream _readerStream = null!;
 
-    public SmartWaveReader(string fileName, bool platformCompatible = false)
-        : this(File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.Read), platformCompatible)
+    public SmartWaveReader(string fileName)
+        : this(File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.Read))
     {
     }
 
-    public SmartWaveReader(byte[] buffer, bool platformCompatible = false)
-        : this(new MemoryStream(buffer), platformCompatible)
+    public SmartWaveReader(byte[] buffer)
+        : this(new MemoryStream(buffer))
     {
     }
 
-    public SmartWaveReader(Stream stream, bool platformCompatible = false)
+    public SmartWaveReader(Stream stream)
     {
-        _platformCompatible = platformCompatible;
         _lockObject = new object();
         _stream = stream.CanSeek ? stream : new ReadSeekableStream(stream, 4096);
         _stream.Seek(0, SeekOrigin.Begin);
@@ -178,30 +174,7 @@ public class SmartWaveReader : WaveStream, ISampleProvider
         }
         else if (fileFormat == FileFormat.Mp3Id3)
         {
-            if (_platformCompatible)
-            {
-                // To fix NAudio's known issue: https://github.com/naudio/NAudio/issues/763
-                var memoryStream = new MemoryStream();
-                using (sourceStream)
-                {
-                    sourceStream.CopyTo(memoryStream);
-                }
-
-                var track = new Track(memoryStream);
-                var result1 = track.Remove(MetaDataIOFactory.TagType.ID3V1);
-                var result2 = track.Remove(MetaDataIOFactory.TagType.ID3V2);
-                var result3 = track.Save();
-
-                memoryStream.Seek(0, SeekOrigin.Begin);
-                ReaderStream.Dispose();
-
-                _stream = memoryStream;
-                ReaderStream = new NLayerMp3FileReader(memoryStream);
-            }
-            else
-            {
-                ReaderStream = GetMediaFoundationReader(sourceStream);
-            }
+            ReaderStream = GetMediaFoundationReader(sourceStream);
         }
         else if (fileFormat == FileFormat.Mp3)
         {
