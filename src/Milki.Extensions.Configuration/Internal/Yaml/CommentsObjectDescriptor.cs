@@ -5,19 +5,19 @@ namespace Milki.Extensions.Configuration.Internal.Yaml
 {
     internal sealed class CommentsObjectDescriptor : IObjectDescriptor
     {
-        private readonly IObjectDescriptor innerDescriptor;
+        private readonly IObjectDescriptor _innerDescriptor;
 
         public CommentsObjectDescriptor(IObjectDescriptor innerDescriptor, string comment)
         {
-            this.innerDescriptor = innerDescriptor;
-            this.Comment = comment;
+            _innerDescriptor = innerDescriptor;
+            Comment = comment;
         }
 
-        public string Comment { get; private set; }
+        public string? Comment { get; private set; }
 
-        public object Value { get { return innerDescriptor.Value; } }
-        public Type Type { get { return innerDescriptor.Type; } }
-        public Type StaticType { get { return innerDescriptor.StaticType; } }
-        public ScalarStyle ScalarStyle { get { return innerDescriptor.ScalarStyle; } }
+        public object? Value => _innerDescriptor.Value;
+        public Type Type => _innerDescriptor.Type;
+        public Type StaticType => _innerDescriptor.StaticType;
+        public ScalarStyle ScalarStyle => _innerDescriptor.ScalarStyle;
     }
 }

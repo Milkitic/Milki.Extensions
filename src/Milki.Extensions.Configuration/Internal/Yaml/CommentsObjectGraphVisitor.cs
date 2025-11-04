@@ -11,14 +11,14 @@ namespace Milki.Extensions.Configuration.Internal.Yaml
         {
         }
 
-        public override bool EnterMapping(IPropertyDescriptor key, IObjectDescriptor value, IEmitter context)
+        public override bool EnterMapping(IPropertyDescriptor key, IObjectDescriptor value, IEmitter context, ObjectSerializer serializer)
         {
-            if (value is CommentsObjectDescriptor commentsDescriptor && commentsDescriptor.Comment != null)
+            if (value is CommentsObjectDescriptor { Comment: not null } commentsDescriptor)
             {
                 context.Emit(new YamlDotNet.Core.Events.Comment(commentsDescriptor.Comment, false));
             }
 
-            return base.EnterMapping(key, value, context);
+            return base.EnterMapping(key, value, context, serializer);
         }
     }
 }

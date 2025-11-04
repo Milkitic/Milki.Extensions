@@ -19,6 +19,16 @@ namespace Milki.Extensions.Configuration.Internal.Yaml
             _innerTypeDescriptor = innerTypeDescriptor;
         }
 
+        public override string GetEnumName(Type enumType, string name)
+        {
+            return _innerTypeDescriptor.GetEnumName(enumType, name);
+        }
+
+        public override string GetEnumValue(object enumValue)
+        {
+            return _innerTypeDescriptor.GetEnumValue(enumValue);
+        }
+
         public override IEnumerable<IPropertyDescriptor> GetProperties(Type type, object container)
         {
             return _innerTypeDescriptor
@@ -56,12 +66,16 @@ namespace Milki.Extensions.Configuration.Internal.Yaml
 
             public bool CanWrite => _baseDescriptor.CanWrite;
 
+            public bool AllowNulls => _baseDescriptor.AllowNulls;
+            public bool Required => _baseDescriptor.Required;
+            public Type? ConverterType => _baseDescriptor.ConverterType;
+
             public void Write(object target, object value)
             {
                 _baseDescriptor.Write(target, value);
             }
 
-            public T GetCustomAttribute<T>() where T : Attribute
+            public T? GetCustomAttribute<T>() where T : Attribute
             {
                 return _baseDescriptor.GetCustomAttribute<T>();
             }
