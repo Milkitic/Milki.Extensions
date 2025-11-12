@@ -16,14 +16,14 @@ namespace KeyHookTest
         public MainWindow()
         {
             InitializeComponent();
-            //_keyboardHook = KeyboardHookFactory.CreateGlobal();
+            _keyboardHook = KeyboardHookFactory.CreateGlobal();
             //_keyboardHook = KeyboardHookFactory.CreateApplication();
-            _keyboardHook = KeyboardHookFactory.CreateRawInput();
+            //_keyboardHook = KeyboardHookFactory.CreateRawInput();
         }
 
         private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
         {
-            //_keyboardHook.KeyPressed += KeyboardHook_KeyPressed;
+            _keyboardHook.KeyPressed += _keyboardHook_KeyPressed;
             _handle = _keyboardHook.RegisterHotkey(
                 HookModifierKeys.Control, HookKeys.S, (modifier, key, type) =>
                 {
@@ -56,6 +56,14 @@ namespace KeyHookTest
             //        Console.WriteLine("O");
             //    }
             //);
+        }
+
+        private void _keyboardHook_KeyPressed(HookModifierKeys hookModifierKeys, HookKeys hookKey, KeyAction type)
+        {
+            if (type == KeyAction.KeyDown)
+                Console.WriteLine($"[{GetThreadName()}] {hookKey} (\u2193)");
+            else if (type == KeyAction.KeyUp)
+                Console.WriteLine($"[{GetThreadName()}] {hookKey} (\u2191)");
         }
 
         private void KeyboardHook_KeyPressed(HookModifierKeys hookModifierKeys, HookKeys hookKey, KeyAction type)
