@@ -1,11 +1,10 @@
-﻿namespace Milki.Extensions.Threading;
+namespace Milki.Extensions.Threading;
 
 internal sealed class SingleThread
 {
     private readonly Thread _singleThread;
     private readonly IQueueReader<SendOrPostCallbackItem> _queueConsumer;
     private readonly SynchronizationContext _syncContext;
-    private readonly ManualResetEventSlim _stopEvent = new(false);
 
     internal SingleThread(IQueueReader<SendOrPostCallbackItem> reader, SynchronizationContext syncContext,
         string? name = null, bool staThread = false, ThreadPriority threadPriority = ThreadPriority.Normal)
@@ -39,24 +38,20 @@ internal sealed class SingleThread
         SynchronizationContext.SetSynchronizationContext(_syncContext);
         while (true)
         {
-            bool stop = _stopEvent.Wait(0);
-            if (stop)
+            var workItem = _queueConsumer.Dequeue();
+            if (workItem == null)
             {
-                _queueConsumer.Dispose();
+                // Reader released and queue drained; exit thread
                 break;
             }
 
-            var workItem = _queueConsumer.Dequeue();
-            if (workItem != null)
-            {
-                workItem.Execute();
-            }
+            workItem.Execute();
         }
     }
 
     internal void Stop()
     {
-        _stopEvent.Set();
+        // Signal reader to unblock and allow clean drain then exit
         _queueConsumer.ReleaseReader();
     }
 }

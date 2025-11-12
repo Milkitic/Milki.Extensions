@@ -4,15 +4,19 @@ internal class BlockingQueue<T> : IQueueReader<T>, IQueueWriter<T>
 {
     // use a .NET queue to store the data
     private readonly Queue<T> _queue = new Queue<T>();
+
     // create a semaphore that contains the items in the queue as resources.
     // initialize the semaphore to zero available resources (empty queue).
     private readonly Semaphore _semaphore = new Semaphore(0, int.MaxValue);
+
     // a event that gets triggered when the reader thread is exiting
     private readonly ManualResetEvent _killThread = new ManualResetEvent(false);
+
     // wait handles that are used to unblock a Dequeue operation.
     // Either when there is an item in the queue
     // or when the reader thread is exiting.
     private readonly WaitHandle[] _waitHandles;
+    private bool _disposed;
 
     public BlockingQueue()
     {
@@ -21,6 +25,7 @@ internal class BlockingQueue<T> : IQueueReader<T>, IQueueWriter<T>
 
     public void Enqueue(T data)
     {
+        if (_disposed) throw new ObjectDisposedException(nameof(BlockingQueue<T>));
         lock (_queue) _queue.Enqueue(data);
         // add an available resource to the semaphore,
         // because we just put an item
@@ -48,7 +53,15 @@ internal class BlockingQueue<T> : IQueueReader<T>, IQueueWriter<T>
 
     public void Dispose()
     {
-        _semaphore.Close();
-        _queue.Clear();
+        if (_disposed) return;
+        _disposed = true;
+        // Unblock any waiting Dequeue and cleanup resources
+        _killThread.Set();
+        _semaphore.Dispose();
+        _killThread.Dispose();
+        lock (_queue)
+        {
+            _queue.Clear();
+        }
     }
 }
