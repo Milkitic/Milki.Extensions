@@ -12,12 +12,14 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v5
     
     - name: Setup .NET
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v5
       with:
-        dotnet-version: 8.0.x
+      dotnet-version: | 
+        8.0.x
+        10.0.x
         
     #- name: Restore dependencies
     #  run: dotnet restore
@@ -38,7 +40,7 @@ jobs:
         minimum-major-minor: 0.0
       
     - name: Create a new GitHub release if a new tag is pushed
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       if: ${{ success() && startsWith(github.ref, 'refs/tags/') }}
       env:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
@@ -53,7 +55,7 @@ jobs:
           ./ci-pack-Milki.Extensions.MouseKeyHook/Milki.Extensions.MouseKeyHook.${{ steps.version.outputs.version }}.nupkg
 
     - name: Nuget Publish Milki.Extensions.Threading
-      uses: Rebel028/publish-nuget@v2.7.0
+      uses: Rebel028/publish-nuget@v2.8.0
       if: ${{ success() }}
       with:
         PROJECT_FILE_PATH: src/Milki.Extensions.Threading/Milki.Extensions.Threading.csproj
@@ -63,7 +65,7 @@ jobs:
         TAG_COMMIT: false
 
     - name: Nuget Publish Milki.Extensions.Configuration
-      uses: Rebel028/publish-nuget@v2.7.0
+      uses: Rebel028/publish-nuget@v2.8.0
       if: ${{ success() }}
       with:
         PROJECT_FILE_PATH: src/Milki.Extensions.Configuration/Milki.Extensions.Configuration.csproj
@@ -73,7 +75,7 @@ jobs:
         TAG_COMMIT: false
 
     - name: Nuget Publish Milki.Extensions.MixPlayer
-      uses: Rebel028/publish-nuget@v2.7.0
+      uses: Rebel028/publish-nuget@v2.8.0
       if: ${{ success() }}
       with:
         PROJECT_FILE_PATH: src/Milki.Extensions.MixPlayer/Milki.Extensions.MixPlayer.csproj
@@ -83,7 +85,7 @@ jobs:
         TAG_COMMIT: false
 
     - name: Nuget Publish Milki.Extensions.MouseKeyHook
-      uses: Rebel028/publish-nuget@v2.7.0
+      uses: Rebel028/publish-nuget@v2.8.0
       if: ${{ success() }}
       with:
         PROJECT_FILE_PATH: src/Milki.Extensions.MouseKeyHook/Milki.Extensions.MouseKeyHook.csproj
