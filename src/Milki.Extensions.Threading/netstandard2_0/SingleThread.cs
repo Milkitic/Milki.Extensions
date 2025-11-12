@@ -1,3 +1,5 @@
+#if NETSTANDARD2_0
+
 namespace Milki.Extensions.Threading;
 
 internal sealed class SingleThread
@@ -55,3 +57,5 @@ internal sealed class SingleThread
         _queueConsumer.ReleaseReader();
     }
 }
+
+#endif

@@ -7,4 +7,8 @@
     <IsTrimmable>True</IsTrimmable>
   </PropertyGroup>
 
+  <ItemGroup Condition="$(TargetFramework)=='net8.0'">
+    <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="10.0.0" />
+  </ItemGroup>
+
 </Project>

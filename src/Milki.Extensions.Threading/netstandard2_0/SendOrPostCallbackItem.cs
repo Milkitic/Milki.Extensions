@@ -1,4 +1,6 @@
-﻿namespace Milki.Extensions.Threading;
+﻿#if NETSTANDARD2_0
+
+namespace Milki.Extensions.Threading;
 
 internal sealed class SendOrPostCallbackItem
 {
@@ -56,3 +58,5 @@ internal sealed class SendOrPostCallbackItem
 
     internal SemaphoreSlim ExecutionCompleteWaitHandle => _asyncWaitHandle;
 }
+
+#endif

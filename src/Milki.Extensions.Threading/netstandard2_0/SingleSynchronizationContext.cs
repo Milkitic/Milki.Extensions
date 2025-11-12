@@ -1,3 +1,5 @@
+#if NETSTANDARD2_0
+
 namespace Milki.Extensions.Threading;
 
 public sealed class SingleSynchronizationContext : SynchronizationContext, IDisposable
@@ -22,7 +24,7 @@ public sealed class SingleSynchronizationContext : SynchronizationContext, IDisp
             d(state);
             return;
         }
-        
+
         // create an item for execution
         var item = new SendOrPostCallbackItem(d, state, ExecutionType.Send);
         // queue the item
@@ -171,3 +173,5 @@ public sealed class SingleSynchronizationContext : SynchronizationContext, IDisp
         return this;
     }
 }
+
+#endif
