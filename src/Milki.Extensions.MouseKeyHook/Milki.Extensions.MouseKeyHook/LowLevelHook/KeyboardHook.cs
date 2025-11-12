@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using Microsoft.Extensions.ObjectPool;
 using Milki.Extensions.MouseKeyHook.Internal;
 using Milki.Extensions.Threading;
 
@@ -14,6 +15,8 @@ internal class KeyboardHook : IKeyboardHook
     private readonly IntPtr _hookId;
     private readonly bool _isGlobal;
 
+    private readonly ObjectPool<KeyboardParams> _paramsPool =
+        new DefaultObjectPool<KeyboardParams>(new DefaultPooledObjectPolicy<KeyboardParams>());
     private readonly ConcurrentDictionary<KeyBindTuple, KeyBind> _registeredCallbacks = new();
     private readonly ConcurrentDictionary<Guid, KeyBind> _registeredCallbackGuidMappings = new();
     private readonly ConcurrentDictionary<HookKeys, bool> _downKeys = new();
@@ -143,36 +146,43 @@ internal class KeyboardHook : IKeyboardHook
     private void HandleSingleKeyboardInput(object? state)
     {
         var keyboardParams = (KeyboardParams)state!;
-
-        KeyboardParamsDetail paramsDetail = new();
-        KeyboardParamsDetail.GetParamsDetail(keyboardParams, ref paramsDetail);
-        var modifierKey = paramsDetail.HookModifierKeys;
-        var hookKey = paramsDetail.HookKey;
-        if (paramsDetail.IsKeyDown)
+        try
         {
-            if (HandleKeyPress(hookKey, modifierKey, KeyAction.KeyDown))
+            KeyboardParamsDetail paramsDetail = new();
+            KeyboardParamsDetail.GetParamsDetail(keyboardParams, ref paramsDetail);
+            var modifierKey = paramsDetail.HookModifierKeys;
+            var hookKey = paramsDetail.HookKey;
+            if (paramsDetail.IsKeyDown)
             {
-                _downKeys.TryAdd(hookKey, true);
+                if (HandleKeyPress(hookKey, modifierKey, KeyAction.KeyDown))
+                {
+                    _downKeys.TryAdd(hookKey, true);
+                }
+            }
+            else if (paramsDetail.IsKeyUp)
+            {
+                if (HandleKeyPress(hookKey, modifierKey, KeyAction.KeyUp))
+                {
+                    _downKeys.TryRemove(hookKey, out _);
+                }
             }
         }
-        else if (paramsDetail.IsKeyUp)
+        finally
         {
-            if (HandleKeyPress(hookKey, modifierKey, KeyAction.KeyUp))
-            {
-                _downKeys.TryRemove(hookKey, out _);
-            }
+            _paramsPool.Return(keyboardParams);
         }
     }
 
     private IntPtr HookGlobalCallback(int nCode, IntPtr wParam, IntPtr lParam)
     {
-        if (nCode != 0) // pass
+        if (nCode == 0)
         {
-            return NativeHooks.CallNextHookEx(_hookId, nCode, wParam, lParam);
+            // To prevent slowing keyboard input down, we use handle keyboard inputs in a separate thread
+            var keyboardParams = _paramsPool.Get();
+            keyboardParams.Initialize(_isGlobal, wParam, lParam);
+            _context.Post(HandleSingleKeyboardInput, keyboardParams);
         }
 
-        // To prevent slowing keyboard input down, we use handle keyboard inputs in a separate thread
-        _context.Post(HandleSingleKeyboardInput, new KeyboardParams(_isGlobal, wParam, lParam));
         return NativeHooks.CallNextHookEx(_hookId, nCode, wParam, lParam);
     }
 }

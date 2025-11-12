@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 using Windows.Win32;
 using Windows.Win32.UI.Input.KeyboardAndMouse;
 
@@ -15,15 +14,14 @@ internal record struct KeyboardParamsDetail
     public bool IsKeyUp;
     public bool IsExtendedKey;
 
-    public static void GetParamsDetail(KeyboardParams keyboardParams, ref KeyboardParamsDetail keyboardParamsDetail)
+    public static unsafe void GetParamsDetail(KeyboardParams keyboardParams, ref KeyboardParamsDetail keyboardParamsDetail)
     {
         var lParam = keyboardParams.LParam;
         var wParam = keyboardParams.WParam;
 
         if (keyboardParams.IsGlobal)
         {
-            var keyboardHookStruct =
-                (KeyboardHookStruct)Marshal.PtrToStructure(lParam, typeof(KeyboardHookStruct));
+            KeyboardHookStruct* pStruct = (KeyboardHookStruct*)lParam;
 
             var modifierKeys = GetModifierStates();
 
@@ -32,9 +30,9 @@ internal record struct KeyboardParamsDetail
             var isKeyUp = keyCode is PInvoke.WM_KEYUP or PInvoke.WM_SYSKEYUP;
 
             const uint maskExtendedKey = 0x1;
-            var isExtendedKey = (keyboardHookStruct.Flags & maskExtendedKey) > 0;
+            var isExtendedKey = (pStruct->Flags & maskExtendedKey) > 0;
 
-            keyboardParamsDetail.HookKey = (HookKeys)keyboardHookStruct.VirtualKeyCode;
+            keyboardParamsDetail.HookKey = (HookKeys)pStruct->VirtualKeyCode;
             keyboardParamsDetail.HookModifierKeys = modifierKeys;
             if (keyboardParamsDetail.HookKey == HookKeys.ControlKey && modifierKeys == HookModifierKeys.Control)
             {
@@ -50,8 +48,8 @@ internal record struct KeyboardParamsDetail
                 keyboardParamsDetail.HookModifierKeys = HookModifierKeys.None;
             }
 
-            keyboardParamsDetail.ScanCode = keyboardHookStruct.ScanCode;
-            keyboardParamsDetail.Timestamp = keyboardHookStruct.Time;
+            keyboardParamsDetail.ScanCode = pStruct->ScanCode;
+            keyboardParamsDetail.Timestamp = pStruct->Time;
             keyboardParamsDetail.IsKeyDown = isKeyDown;
             keyboardParamsDetail.IsKeyUp = isKeyUp;
             keyboardParamsDetail.IsExtendedKey = isExtendedKey;
