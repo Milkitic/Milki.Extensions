@@ -8,7 +8,7 @@ jobs:
   build:
     name: Build and Publish
     if: ${{ StartsWith(github.ref, 'refs/tags/') }}
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
     - name: Checkout code
