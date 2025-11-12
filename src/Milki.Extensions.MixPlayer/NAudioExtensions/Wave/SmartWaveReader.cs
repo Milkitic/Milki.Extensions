@@ -29,8 +29,10 @@ public class SmartWaveReader : WaveStream, ISampleProvider
 
     public SmartWaveReader(Stream stream)
     {
+        if (!stream.CanSeek) throw new ArgumentException("Stream must be seekable.", nameof(stream));
+
         _lockObject = new object();
-        _stream = stream.CanSeek ? stream : new ReadSeekableStream(stream, 4096);
+        _stream = stream;
         _stream.Seek(0, SeekOrigin.Begin);
         if (_stream is FileStream fs)
         {

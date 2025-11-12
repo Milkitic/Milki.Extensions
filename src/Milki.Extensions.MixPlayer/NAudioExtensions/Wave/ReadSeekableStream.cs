@@ -5,6 +5,7 @@ using System.IO;
 namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 
 // From https://stackoverflow.com/questions/13035925/stream-wrapper-to-make-stream-seekable
+[Obsolete]
 public class ReadSeekableStream : Stream
 {
     private long _underlyingPosition;

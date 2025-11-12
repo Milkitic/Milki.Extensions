@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ATL;
-using Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
 
 namespace Milki.Extensions.MixPlayer.Utilities;
 
@@ -131,10 +130,7 @@ public static class FileFormatHelper
 
     public static FileFormat GetFileFormatFromStream(Stream sourceStream)
     {
-        if (!sourceStream.CanSeek)
-        {
-            sourceStream = new ReadSeekableStream(sourceStream, 32);
-        }
+        if (!sourceStream.CanSeek) throw new ArgumentException("Stream must be seekable.", nameof(sourceStream));
 
         var firstByte = sourceStream.ReadByte();
         var matches = KnownMatchRules.Where(k => k.PeekFromBegin((byte)firstByte));

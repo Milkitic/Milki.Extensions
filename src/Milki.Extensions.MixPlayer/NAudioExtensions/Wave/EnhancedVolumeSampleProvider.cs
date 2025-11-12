@@ -6,6 +6,7 @@ using System.Runtime.Intrinsics.X86;
 #endif
 
 using System;
+using System.Runtime.CompilerServices;
 using NAudio.Wave;
 
 namespace Milki.Extensions.MixPlayer.NAudioExtensions.Wave;
@@ -47,6 +48,7 @@ public class EnhancedVolumeSampleProvider : ISampleProvider
     /// <param name="offset">Offset into sample buffer</param>
     /// <param name="sampleCount">Number of samples desired</param>
     /// <returns>Number of samples read</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int Read(float[] buffer, int offset, int sampleCount)
     {
         if (Source == null)
@@ -55,23 +57,26 @@ public class EnhancedVolumeSampleProvider : ISampleProvider
             return sampleCount;
         }
 
+        var currentVolume = Volume;
         int samplesRead = Source.Read(buffer, offset, sampleCount);
-        if (Math.Abs(Volume - 1f) > 0.001)
+
+        if (Math.Abs(currentVolume - 1f) > 0.001)
         {
 #if NETCOREAPP3_1_OR_GREATER
-            FastPath(buffer, offset, sampleCount);
+            FastPath(buffer, offset, samplesRead, currentVolume);
 #else
-            for (int n = 0; n < sampleCount; n++)
+            for (int n = 0; n < samplesRead; n++)
             {
-                buffer[offset + n] *= Volume;
+                buffer[offset + n] *= currentVolume;
             }
 #endif
         }
+
         return samplesRead;
     }
 
 #if NETCOREAPP3_1_OR_GREATER
-    private unsafe void FastPath(float[] buffer, int offset, int sampleCount)
+    private static unsafe void FastPath(float[] buffer, int offset, int samplesRead, float currentVolume)
     {
         fixed (float* b = buffer)
         {
@@ -81,8 +86,8 @@ public class EnhancedVolumeSampleProvider : ISampleProvider
 
             if (Avx.IsSupported)
             {
-                var volume = Vector256.Create(Volume);
-                var vector256SampleCount = sampleCount & ~7;
+                var volume = Vector256.Create(currentVolume);
+                var vector256SampleCount = samplesRead & ~7;
                 pEnd = pStart + vector256SampleCount;
                 while (pCurrent < pEnd)
                 {
@@ -95,8 +100,8 @@ public class EnhancedVolumeSampleProvider : ISampleProvider
 
             if (Sse.IsSupported)
             {
-                var volume = Vector128.Create(Volume);
-                var vector128SampleCount = sampleCount & ~3;
+                var volume = Vector128.Create(currentVolume);
+                var vector128SampleCount = samplesRead & ~3;
                 pEnd = pStart + vector128SampleCount;
                 while (pCurrent < pEnd)
                 {
@@ -107,10 +112,10 @@ public class EnhancedVolumeSampleProvider : ISampleProvider
                 }
             }
 
-            pEnd = pStart + sampleCount;
+            pEnd = pStart + samplesRead;
             while (pCurrent < pEnd)
             {
-                *pCurrent *= Volume;
+                *pCurrent *= currentVolume;
                 pCurrent++;
             }
         }
