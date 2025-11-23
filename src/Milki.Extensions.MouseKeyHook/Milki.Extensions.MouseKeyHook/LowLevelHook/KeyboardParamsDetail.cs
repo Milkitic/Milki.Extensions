@@ -99,7 +99,6 @@ internal record KeyboardParamsDetail
             keyboardParamsDetail.IsKeyDown = isKeyDown;
             keyboardParamsDetail.IsKeyUp = isKeyUp;
             keyboardParamsDetail.IsExtendedKey = isExtendedKey;
-            //Console.WriteLine(keyboardParamsDetail);
         }
     }
 

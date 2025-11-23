@@ -12,7 +12,6 @@ internal class KeyboardHook : IKeyboardHook
 
     // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
     private readonly NativeHooks.LowLevelKeyboardProc _hookCallback; // Keeping alive the delegate
-    private readonly IntPtr _hookId;
     private readonly bool _isGlobal;
 
     private readonly ObjectPool<KeyboardParamsDetail> _paramsPool =
@@ -22,14 +21,24 @@ internal class KeyboardHook : IKeyboardHook
     private readonly ConcurrentDictionary<HookKeys, bool> _downKeys = new();
 
     private readonly SingleSynchronizationContext _context;
+    private readonly HookLoop? _hookLoop;
+    private IntPtr _hookId;
 
     public KeyboardHook(bool forceGlobal)
     {
         _isGlobal = forceGlobal;
         _hookCallback = HookGlobalCallback;
-        _hookId = forceGlobal
-            ? NativeHooks.SetGlobalHook(_hookCallback)
-            : NativeHooks.SetApplicationHook(_hookCallback);
+        if (forceGlobal)
+        {
+            _hookLoop = new HookLoop(() => NativeHooks.SetGlobalHook(_hookCallback),
+                hookId => NativeHooks.UnhookWindowsHookEx(hookId));
+            _hookLoop.Start();
+        }
+        else
+        {
+            _hookId = NativeHooks.SetApplicationHook(_hookCallback);
+        }
+
         _context = new SingleSynchronizationContext();
     }
 
@@ -83,7 +92,9 @@ internal class KeyboardHook : IKeyboardHook
 
     public void Dispose()
     {
-        NativeHooks.UnhookWindowsHookEx(_hookId);
+        if (_isGlobal) _hookLoop!.Stop();
+
+        _hookId = IntPtr.Zero;
         _context.Dispose();
         _downKeys.Clear();
         _registeredCallbacks.Clear();

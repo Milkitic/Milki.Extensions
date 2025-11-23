@@ -10,6 +10,7 @@ WM_DESTROY
 DispatchMessage
 GetMessage
 PostMessage
+PostThreadMessage
 PostQuitMessage
 TranslateMessage
 WM_QUIT
@@ -30,3 +31,4 @@ HWND_MESSAGE
 
 // Module Related
 GetModuleHandle
+GetCurrentThreadId
