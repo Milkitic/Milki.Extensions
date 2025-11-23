@@ -4,7 +4,7 @@ using Windows.Win32.UI.Input.KeyboardAndMouse;
 
 namespace Milki.Extensions.MouseKeyHook.LowLevelHook;
 
-internal record struct KeyboardParamsDetail
+internal record KeyboardParamsDetail
 {
     public HookKeys HookKey;
     public HookModifierKeys HookModifierKeys;
@@ -14,12 +14,9 @@ internal record struct KeyboardParamsDetail
     public bool IsKeyUp;
     public bool IsExtendedKey;
 
-    public static unsafe void GetParamsDetail(KeyboardParams keyboardParams, ref KeyboardParamsDetail keyboardParamsDetail)
+    public static unsafe void GetParamsDetail(bool isGlobal, IntPtr wParam, IntPtr lParam, KeyboardParamsDetail keyboardParamsDetail)
     {
-        var lParam = keyboardParams.LParam;
-        var wParam = keyboardParams.WParam;
-
-        if (keyboardParams.IsGlobal)
+        if (isGlobal)
         {
             KeyboardHookStruct* pStruct = (KeyboardHookStruct*)lParam;
 

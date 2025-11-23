@@ -1,5 +1,4 @@
-﻿using Milki.Extensions.MouseKeyHook.Internal;
-using Milki.Extensions.MouseKeyHook.LowLevelHook;
+﻿using Milki.Extensions.MouseKeyHook.LowLevelHook;
 using Milki.Extensions.MouseKeyHook.RawInput;
 
 namespace Milki.Extensions.MouseKeyHook;

@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 
 namespace Milki.Extensions.MouseKeyHook.LowLevelHook;
 
@@ -34,5 +35,5 @@ internal readonly struct KeyboardHookStruct
     /// <summary>
     ///     Specifies extra information associated with the message.
     /// </summary>
-    public readonly int ExtraInfo;
+    public readonly UIntPtr ExtraInfo;
 }

@@ -2,11 +2,11 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Threading;
-using Linearstar.Windows.RawInput;
-using Linearstar.Windows.RawInput.Native;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
+using Linearstar.Windows.RawInput;
+using Linearstar.Windows.RawInput.Native;
 
 namespace Milki.Extensions.MouseKeyHook.RawInput;
 

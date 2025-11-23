@@ -15,8 +15,8 @@ internal class KeyboardHook : IKeyboardHook
     private readonly IntPtr _hookId;
     private readonly bool _isGlobal;
 
-    private readonly ObjectPool<KeyboardParams> _paramsPool =
-        new DefaultObjectPool<KeyboardParams>(new DefaultPooledObjectPolicy<KeyboardParams>());
+    private readonly ObjectPool<KeyboardParamsDetail> _paramsPool =
+        new DefaultObjectPool<KeyboardParamsDetail>(new DefaultPooledObjectPolicy<KeyboardParamsDetail>());
     private readonly ConcurrentDictionary<KeyBindTuple, KeyBind> _registeredCallbacks = new();
     private readonly ConcurrentDictionary<Guid, KeyBind> _registeredCallbackGuidMappings = new();
     private readonly ConcurrentDictionary<HookKeys, bool> _downKeys = new();
@@ -145,11 +145,9 @@ internal class KeyboardHook : IKeyboardHook
 
     private void HandleSingleKeyboardInput(object? state)
     {
-        var keyboardParams = (KeyboardParams)state!;
+        var paramsDetail = (KeyboardParamsDetail)state!;
         try
         {
-            KeyboardParamsDetail paramsDetail = new();
-            KeyboardParamsDetail.GetParamsDetail(keyboardParams, ref paramsDetail);
             var modifierKey = paramsDetail.HookModifierKeys;
             var hookKey = paramsDetail.HookKey;
             if (paramsDetail.IsKeyDown)
@@ -169,7 +167,7 @@ internal class KeyboardHook : IKeyboardHook
         }
         finally
         {
-            _paramsPool.Return(keyboardParams);
+            _paramsPool.Return(paramsDetail);
         }
     }
 
@@ -178,9 +176,9 @@ internal class KeyboardHook : IKeyboardHook
         if (nCode == 0)
         {
             // To prevent slowing keyboard input down, we use handle keyboard inputs in a separate thread
-            var keyboardParams = _paramsPool.Get();
-            keyboardParams.Initialize(_isGlobal, wParam, lParam);
-            _context.Post(HandleSingleKeyboardInput, keyboardParams);
+            var paramsDetail = _paramsPool.Get();
+            KeyboardParamsDetail.GetParamsDetail(_isGlobal, wParam, lParam, paramsDetail);
+            _context.Post(HandleSingleKeyboardInput, paramsDetail);
         }
 
         return NativeHooks.CallNextHookEx(_hookId, nCode, wParam, lParam);
