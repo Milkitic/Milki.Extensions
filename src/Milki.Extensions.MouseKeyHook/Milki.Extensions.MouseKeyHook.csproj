@@ -18,6 +18,10 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup Condition="$(TargetFramework)=='netstandard2.0'">
+    <PackageReference Include="System.Memory" Version="4.6.3" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Milki.Extensions.Threading\Milki.Extensions.Threading.csproj" />
   </ItemGroup>

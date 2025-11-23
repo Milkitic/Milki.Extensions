@@ -66,14 +66,14 @@ public abstract class RawInputData
     public static unsafe RawInputData[] GetBufferedData(int bufferSize = 8)
     {
         var itemSize = User32.GetRawInputBufferSize();
-        if (itemSize == 0) return new RawInputData[0];
+        if (itemSize == 0) return Array.Empty<RawInputData>();
 
         var bytes = new byte[itemSize * bufferSize];
 
         fixed (byte* bytesPtr = bytes)
         {
             var count = User32.GetRawInputBuffer((IntPtr)bytesPtr, (uint)bytes.Length);
-            if (count == 0) return new RawInputData[0];
+            if (count == 0) return Array.Empty<RawInputData>();
 
             var result = new RawInputData[count];
 

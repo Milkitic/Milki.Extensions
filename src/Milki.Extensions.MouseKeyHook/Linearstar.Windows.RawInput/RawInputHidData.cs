@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Linearstar.Windows.RawInput.Native;
 
 namespace Linearstar.Windows.RawInput;
@@ -12,12 +13,12 @@ public class RawInputHidData : RawInputData
     public HidButtonSetState[] ButtonSetStates =>
         Device != null
             ? Hid.ToHidReports().SelectMany(report => Device.Reader.ButtonSets.Select(x => x.GetStates(report))).ToArray()
-            : new HidButtonSetState[0];
+            : Array.Empty<HidButtonSetState>();
 
     public HidValueSetState[] ValueSetStates =>
         Device != null
             ? Hid.ToHidReports().SelectMany(report => Device.Reader.ValueSets.Select(x => x.GetStates(report))).ToArray()
-            : new HidValueSetState[0];
+            : Array.Empty<HidValueSetState>();
 
     protected RawInputHidData(RawInputHeader header, RawHid hid)
         : base(header) =>

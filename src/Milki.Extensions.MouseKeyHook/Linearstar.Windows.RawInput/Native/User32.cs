@@ -64,7 +64,7 @@ public static class User32
     public static string? GetRawInputDeviceName(RawInputDeviceHandle device)
     {
         var deviceHandle = RawInputDeviceHandle.GetRawValue(device);
-          
+
         // Get the length of the device name first.
         // For RIDI_DEVICENAME, the value in the pcbSize is the character count instead of the byte count.
         GetRawInputDeviceInfo(deviceHandle, RawInputDeviceInfoBehavior.DeviceName, IntPtr.Zero, out var size);
@@ -153,7 +153,7 @@ public static class User32
     {
         var size = GetRawInputDataSize(rawInput);
         var headerSize = (uint)MarshalEx.SizeOf<RawInputHeader>();
-        var bytes = new byte[size];
+        Span<byte> bytes = stackalloc byte[(int)size];
 
         fixed (byte* bytesPtr = bytes)
         {
@@ -169,7 +169,7 @@ public static class User32
     {
         var size = GetRawInputDataSize(rawInput);
         var headerSize = (uint)MarshalEx.SizeOf<RawInputHeader>();
-        var bytes = new byte[size];
+        Span<byte> bytes = stackalloc byte[(int)size];
 
         fixed (byte* bytesPtr = bytes)
         {
@@ -185,7 +185,7 @@ public static class User32
     {
         var size = GetRawInputDataSize(rawInput);
         var headerSize = (uint)MarshalEx.SizeOf<RawInputHeader>();
-        var bytes = new byte[size];
+        Span<byte> bytes = stackalloc byte[(int)size];
 
         fixed (byte* bytesPtr = bytes)
         {

@@ -116,21 +116,21 @@ public unsafe class RawInputController : IDisposable
             if (RegisterKeyboard)
             {
                 RawInputDevice.RegisterDevice(HidUsageAndPage.Keyboard,
-                    RawInputDeviceFlags.ExInputSink | RawInputDeviceFlags.NoLegacy, _hWnd);
+                    RawInputDeviceFlags.InputSink | RawInputDeviceFlags.NoLegacy, _hWnd);
             }
 
             if (RegisterMouse)
             {
                 RawInputDevice.RegisterDevice(HidUsageAndPage.Mouse,
-                    RawInputDeviceFlags.ExInputSink | RawInputDeviceFlags.NoLegacy, _hWnd);
+                    RawInputDeviceFlags.InputSink | RawInputDeviceFlags.NoLegacy, _hWnd);
             }
 
             if (RegisterController)
             {
                 RawInputDevice.RegisterDevice(HidUsageAndPage.GamePad,
-                    RawInputDeviceFlags.ExInputSink | RawInputDeviceFlags.NoLegacy, _hWnd);
+                    RawInputDeviceFlags.InputSink | RawInputDeviceFlags.NoLegacy, _hWnd);
                 RawInputDevice.RegisterDevice(HidUsageAndPage.Joystick,
-                    RawInputDeviceFlags.ExInputSink | RawInputDeviceFlags.NoLegacy, _hWnd);
+                    RawInputDeviceFlags.InputSink | RawInputDeviceFlags.NoLegacy, _hWnd);
             }
 
             if (RegisterTouch)
