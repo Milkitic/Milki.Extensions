@@ -1,10 +1,15 @@
-﻿using Newtonsoft.Json;
+﻿using System.Diagnostics.CodeAnalysis;
+using Newtonsoft.Json;
 
 namespace Milki.Extensions.Configuration.Converters;
 
 public class JsonConfigurationConverter : IConfigurationConverter
 {
-    public virtual object DeserializeSettings(string content, Type type)
+    public virtual object DeserializeSettings(string content, 
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+#endif
+        Type type)
     {
         var obj = JsonConvert.DeserializeObject(content, type,
             new JsonSerializerSettings

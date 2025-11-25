@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Text;
 using Milki.Extensions.Configuration.Converters;
 using Milki.Extensions.Configuration.Internal;
@@ -12,12 +13,20 @@ public static class ConfigurationFactory
     private static readonly Dictionary<object, ConfigurationInformation> InstanceDictionary = new();
     //private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-    public static T GetConfiguration<T>(IConfigurationConverter? converter = null, string? baseFolder = null)
+    public static T GetConfiguration<
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+#endif
+        T>(IConfigurationConverter? converter = null, string? baseFolder = null)
     {
         return GetConfiguration<T>(baseFolder, converter);
     }
 
-    public static T GetConfiguration<T>(string? baseFolder, IConfigurationConverter? converter = null)
+    public static T GetConfiguration<
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+#endif
+        T>(string? baseFolder, IConfigurationConverter? converter = null)
     {
         var t = typeof(T);
 
@@ -29,7 +38,11 @@ public static class ConfigurationFactory
         return GetConfiguration<T>(true, baseFolder, filename, converter);
     }
 
-    public static T GetConfiguration<T>(string? baseFolder, string filename, IConfigurationConverter? converter = null)
+    public static T GetConfiguration<
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+#endif
+        T>(string? baseFolder, string filename, IConfigurationConverter? converter = null)
     {
         baseFolder ??= Path.GetFullPath("./configs");
         var path = Path.GetFullPath(Path.Combine(baseFolder, filename));
@@ -39,7 +52,11 @@ public static class ConfigurationFactory
         return GetConfiguration<T>(false, baseFolder, filename, converter);
     }
 
-    public static T GetConfiguration<T>(bool isFromType, string? baseFolder, string filename, IConfigurationConverter? converter = null)
+    public static T GetConfiguration<
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+#endif
+        T>(bool isFromType, string? baseFolder, string filename, IConfigurationConverter? converter = null)
     {
         var t = typeof(T);
         var name = Path.GetFileNameWithoutExtension(filename);
@@ -66,7 +83,11 @@ public static class ConfigurationFactory
         return config!;
     }
 
-    public static bool TryLoadConfigFromFile<T>(string path,
+    public static bool TryLoadConfigFromFile<
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+#endif
+        T>(string path,
         IConfigurationConverter converter,
         Encoding encoding,
         out T? config,
@@ -77,7 +98,11 @@ public static class ConfigurationFactory
         return success;
     }
 
-    public static bool TryLoadConfigFromFile(Type type,
+    public static bool TryLoadConfigFromFile(
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+#endif
+        Type type,
         string path,
         IConfigurationConverter converter,
         Encoding encoding,
@@ -115,7 +140,11 @@ public static class ConfigurationFactory
         return true;
     }
 
-    public static object CreateDefaultConfigByPath(Type type, string path, IConfigurationConverter converter,
+    public static object CreateDefaultConfigByPath(
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+#endif
+        Type type, string path, IConfigurationConverter converter,
         Encoding encoding)
     {
         var dir = Path.GetDirectoryName(path);

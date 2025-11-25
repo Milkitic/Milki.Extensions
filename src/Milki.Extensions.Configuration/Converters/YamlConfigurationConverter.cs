@@ -1,4 +1,5 @@
-﻿using Milki.Extensions.Configuration.Internal;
+﻿using System.Diagnostics.CodeAnalysis;
+using Milki.Extensions.Configuration.Internal;
 using Milki.Extensions.Configuration.Internal.Yaml;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -7,7 +8,11 @@ namespace Milki.Extensions.Configuration.Converters;
 
 public class YamlConfigurationConverter : IConfigurationConverter
 {
-    public virtual object DeserializeSettings(string content, Type type)
+    public virtual object DeserializeSettings(string content,
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+#endif
+        Type type)
     {
         var builder = new DeserializerBuilder()
             .WithNamingConvention(PascalCaseNamingConvention.Instance)
