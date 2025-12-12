@@ -17,7 +17,7 @@ public static class KeyboardHookFactory
 
     public static IKeyboardHook CreateRawInput()
     {
-        var rawInputKeyController = new RawInputKeyController();
+        var rawInputKeyController = new RawInputMouseKeyController();
         rawInputKeyController.Start();
         return rawInputKeyController;
     }

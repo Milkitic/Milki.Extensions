@@ -5,7 +5,7 @@ using Milki.Extensions.MouseKeyHook.Internal;
 
 namespace Milki.Extensions.MouseKeyHook.RawInput;
 
-public class RawInputKeyController : RawInputController, IKeyboardHook
+public class RawInputMouseKeyController : RawInputController, IKeyboardHook
 {
     public event KeyboardCallback? KeyPressed;
 
@@ -13,7 +13,7 @@ public class RawInputKeyController : RawInputController, IKeyboardHook
     private readonly ConcurrentDictionary<Guid, KeyBind> _registeredCallbackGuidMappings = new();
     private readonly ConcurrentDictionary<HookKeys, bool> _downKeys = new();
 
-    public RawInputKeyController() : base(true, true)
+    public RawInputMouseKeyController() : base(true, true)
     {
     }
 
