@@ -2,11 +2,11 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Linearstar.Windows.RawInput;
+using Linearstar.Windows.RawInput.Native;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
-using Linearstar.Windows.RawInput;
-using Linearstar.Windows.RawInput.Native;
 
 namespace Milki.Extensions.MouseKeyHook.RawInput;
 
@@ -115,22 +115,18 @@ public unsafe class RawInputController : IDisposable
             //}
             if (RegisterKeyboard)
             {
-                RawInputDevice.RegisterDevice(HidUsageAndPage.Keyboard,
-                    RawInputDeviceFlags.InputSink | RawInputDeviceFlags.NoLegacy, _hWnd);
+                RawInputDevice.RegisterDevice(HidUsageAndPage.Keyboard, RawInputDeviceFlags.InputSink, _hWnd);
             }
 
             if (RegisterMouse)
             {
-                RawInputDevice.RegisterDevice(HidUsageAndPage.Mouse,
-                    RawInputDeviceFlags.InputSink | RawInputDeviceFlags.NoLegacy, _hWnd);
+                RawInputDevice.RegisterDevice(HidUsageAndPage.Mouse, RawInputDeviceFlags.InputSink, _hWnd);
             }
 
             if (RegisterController)
             {
-                RawInputDevice.RegisterDevice(HidUsageAndPage.GamePad,
-                    RawInputDeviceFlags.InputSink | RawInputDeviceFlags.NoLegacy, _hWnd);
-                RawInputDevice.RegisterDevice(HidUsageAndPage.Joystick,
-                    RawInputDeviceFlags.InputSink | RawInputDeviceFlags.NoLegacy, _hWnd);
+                RawInputDevice.RegisterDevice(HidUsageAndPage.GamePad, RawInputDeviceFlags.InputSink, _hWnd);
+                RawInputDevice.RegisterDevice(HidUsageAndPage.Joystick, RawInputDeviceFlags.InputSink, _hWnd);
             }
 
             if (RegisterTouch)

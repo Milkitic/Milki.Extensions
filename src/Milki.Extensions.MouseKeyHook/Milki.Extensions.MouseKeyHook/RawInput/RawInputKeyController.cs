@@ -13,8 +13,54 @@ public class RawInputKeyController : RawInputController, IKeyboardHook
     private readonly ConcurrentDictionary<Guid, KeyBind> _registeredCallbackGuidMappings = new();
     private readonly ConcurrentDictionary<HookKeys, bool> _downKeys = new();
 
-    public RawInputKeyController()
+    public RawInputKeyController() : base(true, true)
     {
+    }
+
+    protected override void OnMouseInput(RawMouse obj)
+    {
+        void HandleMouseAction(HookKeys key, KeyAction action)
+        {
+            if (action == KeyAction.KeyDown)
+            {
+                if (HandleKeyPress(key, HookModifierKeys.None, KeyAction.KeyDown))
+                {
+                    _downKeys.TryAdd(key, true);
+                }
+            }
+            else
+            {
+                if (HandleKeyPress(key, HookModifierKeys.None, KeyAction.KeyUp))
+                {
+                    _downKeys.TryRemove(key, out _);
+                }
+            }
+        }
+
+        if ((obj.Buttons & RawMouseButtonFlags.LeftButtonDown) != 0)
+            HandleMouseAction(HookKeys.LButton, KeyAction.KeyDown);
+        else if ((obj.Buttons & RawMouseButtonFlags.LeftButtonUp) != 0)
+            HandleMouseAction(HookKeys.LButton, KeyAction.KeyUp);
+
+        if ((obj.Buttons & RawMouseButtonFlags.RightButtonDown) != 0)
+            HandleMouseAction(HookKeys.RButton, KeyAction.KeyDown);
+        else if ((obj.Buttons & RawMouseButtonFlags.RightButtonUp) != 0)
+            HandleMouseAction(HookKeys.RButton, KeyAction.KeyUp);
+
+        if ((obj.Buttons & RawMouseButtonFlags.MiddleButtonDown) != 0)
+            HandleMouseAction(HookKeys.MButton, KeyAction.KeyDown);
+        else if ((obj.Buttons & RawMouseButtonFlags.MiddleButtonUp) != 0)
+            HandleMouseAction(HookKeys.MButton, KeyAction.KeyUp);
+
+        if ((obj.Buttons & RawMouseButtonFlags.Button4Down) != 0)
+            HandleMouseAction(HookKeys.XButton1, KeyAction.KeyDown);
+        else if ((obj.Buttons & RawMouseButtonFlags.Button4Up) != 0)
+            HandleMouseAction(HookKeys.XButton1, KeyAction.KeyUp);
+
+        if ((obj.Buttons & RawMouseButtonFlags.Button5Down) != 0)
+            HandleMouseAction(HookKeys.XButton2, KeyAction.KeyDown);
+        else if ((obj.Buttons & RawMouseButtonFlags.Button5Up) != 0)
+            HandleMouseAction(HookKeys.XButton2, KeyAction.KeyUp);
     }
 
     public Guid RegisterKey(HookKeys hookKey, KeyboardCallback callback, bool avoidRepeat = true)
