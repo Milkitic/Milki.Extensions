@@ -310,7 +310,8 @@ public abstract class MultiElementsChannel : Subchannel, ISoundElementsProvider
                             _loopProviders.RemoveAll(Submixer);
                         }
 
-                        _loopProviders.Create(soundElement, null, Submixer!, soundElement.Volume, BalanceFactor);
+                        var loopSound = await soundElement.GetCachedSoundAsync(Submixer!.WaveFormat).ConfigureAwait(false);
+                        _loopProviders.Create(soundElement, loopSound, Submixer, soundElement.Volume, BalanceFactor);
                         break;
                     case SoundNode.StopLoop:
                         if (soundElement.LoopChannel != null)
